@@ -1939,6 +1939,7 @@ class Client:
         cpu: Optional[int] = None,
         memory: Optional[int] = None,
         image_url: Optional[str] = None,
+        lambda_id: Optional[str] = None,
         **optional_args,
     ) -> Dict:
         """Updates a transition, calls the PATCH /transitions/{transitionId} endpoint.
@@ -1972,6 +1973,8 @@ class Client:
         :type memory: int, optional
         :param image_url: Docker image url to use for a docker transition
         :type image_url: str, optional
+        :param lambda_id: Lambda ID to use for a lambda transition
+        :type lambda_id: str, optional
         :param secret_id: Secret containing a username and password if image_url points to a private docker image
         :type secret_id: str, optional
         :return: Transition response from REST API
@@ -1989,6 +1992,7 @@ class Client:
             'assets': assets,
             'cpu': cpu,
             'imageUrl': image_url,
+            'lambdaId': lambda_id,
             'memory': memory,
         })
 
@@ -2749,3 +2753,558 @@ class Client:
             path=f'/validations/{validation_id}/tasks/{validation_task_id}',
             body=body,
         )
+
+    def create_project(
+        self,
+        *,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        metadata: Optional[dict] = None,
+        resource_ids: Optional[list[str]] = None,
+    ) -> Dict:
+        """Get project, calls the GET /projects/{projectId} endpoint.
+
+        :param name: Name of the dataset
+        :type name: str, optional
+        :param description: Description of the dataset
+        :type description: str, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
+        :param resource_ids: Description of the dataset
+        :type resource_ids: list[str], optional
+        :return: Project response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+ :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body = dictstrip({
+            'description': description,
+            'metadata': metadata,
+            'name': name,
+            'resourceIds': resource_ids,
+        })
+        return self._make_request(requests.post, '/projects', body=body)
+
+    def get_project(self, project_id: str) -> Dict:
+        """Get project, calls the GET /projects/{projectId} endpoint.
+
+        :param project_id: Id of the project
+        :type project_id: str
+        :return: Project response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+ :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.get, f'/projects/{project_id}')
+
+    def update_project(
+        self,
+        project_id: str,
+        *,
+        metadata: Optional[dict] = None,
+        resource_ids: Optional[list[str]] = None,
+        **optional_args,
+    ) -> Dict:
+        """Get project, calls the GET /projects/{projectId} endpoint.
+
+        :param project_id: Id of the project
+        :type project_id: str
+        :param name: Name of the dataset
+        :type name: str, optional
+        :param description: Description of the dataset
+        :type description: str, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
+        :param resource_ids: Description of the dataset
+        :type resource_ids: list[str], optional
+        :return: Project response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+ :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body = dictstrip({
+            'metadata': metadata,
+            'resourceIds': resource_ids,
+        })
+        body.update(**optional_args)
+        return self._make_request(requests.patch, f'/projects/{project_id}', body=body)
+
+    def delete_project(self, project_id: str) -> Dict:
+        """Delete project, calls the DELETE /projects/{projectId} endpoint.
+
+        :param project_id: Id of the project
+        :type project_id: str
+        :return: Project response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+ :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.delete, f'/projects/{project_id}')
+
+    def list_projects(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
+        """List projects available, calls the GET /projects endpoint.
+
+        :param max_results: Maximum number of results to be returned
+        :type max_results: int, optional
+        :param next_token: A unique token for each page, use the returned token to retrieve the next page.
+        :type next_token: str, optional
+        :return: Projects response from REST API without the content of each project
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+ :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        params = {
+            'maxResults': max_results,
+            'nextToken': next_token,
+        }
+        return self._make_request(requests.get, '/projects', params=params)
+
+    def create_project_run(self, project_id: str) -> Dict:
+        """Get project, calls the GET /projects/{projectId} endpoint.
+
+        :param project_id: Id of the project
+        :type project_id: str
+        :return: Project response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+ :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.post, f'/projects/{project_id}/runs', body={})
+
+    def list_project_runs(
+        self,
+        project_id: str,
+        *,
+        history: Optional[str] = None,
+        max_results: Optional[int] = None,
+        next_token: Optional[str] = None,
+    ) -> Dict:
+        """List projects available, calls the GET /projects/{projectId}/runs endpoint.
+
+        :param project_id: Id of the project
+        :type project_id: str
+        :param max_results: Maximum number of results to be returned
+        :type max_results: int, optional
+        :param next_token: A unique token for each page, use the returned token to retrieve the next page.
+        :type next_token: str, optional
+        :return: ProjectRuns response from REST API without the content of each project
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+ :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        params = dictstrip({
+            'history': history,
+            'maxResults': max_results,
+            'nextToken': next_token,
+        })
+        return self._make_request(requests.get, f'/projects/{project_id}/runs', params=params)
+
+    def get_project_run(self, project_id: str, run_id: str) -> Dict:
+        """Get project, calls the GET /projects/{projectId} endpoint.
+
+        :param project_id: Id of the project
+        :type project_id: str
+        :param run_id: Id of the run
+        :type run_id: str
+        :return: Project response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+ :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.get, f'/projects/{project_id}/runs/{run_id}')
+
+    def list_hooks(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
+        """List hooks available, calls the GET /hooks endpoint.
+
+        :param max_results: Maximum number of results to be returned
+        :type max_results: int, optional
+        :param next_token: A unique token for each page, use the returned token to retrieve the next page.
+        :type next_token: str, optional
+        :return: Hooks response from REST API without the content of each hook
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+ :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        params = {
+            'maxResults': max_results,
+            'nextToken': next_token,
+        }
+        return self._make_request(requests.get, '/hooks', params=params)
+
+    def get_hook(self, hook_id: str) -> Dict:
+        """Get hook, calls the GET /hooks/{hookId} endpoint.
+
+        :param hook_id: Id of the hook
+        :type hook_id: str
+        :return: Hook response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+ :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.get, f'/hooks/{hook_id}')
+
+    def create_hook(
+        self,
+        project_id: str,
+        condition: str,
+        trigger: str,
+        true_action_id: str,
+        *,
+        config: Optional[dict] = None,
+        description: Optional[str] = None,
+        enabled: Optional[bool] = None,
+        false_action_id: Optional[str] = None,
+        metadata: Optional[dict] = None,
+        name: Optional[str] = None,
+    ) -> Dict:
+
+        """Get hook, calls the POST /hooks endpoint.
+
+        :param project_id: Id of the project the hook belongs to
+        :type project_id: str
+        :param condition: The condition to evaluate true or false when hook is run
+        :type condition: str
+        :param trigger: What will trigger the hook to be run
+        :type trigger: str
+        :param true_action_id: Id of the action that will happen when hook run evaluates to true
+        :type true_action_id: str
+        :param enabled: If the hook is enabled or not
+        :type enabled: bool, optional
+        :param name: Name of the dataset
+        :type name: str, optional
+        :param description: Description of the dataset
+        :type description: str, optional
+        :param config: Dictionary that can be sent as input to true_action_id and false_action_id
+        :type config: dict, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
+        :param false_action_id: Id of the action that will happen when hook run evaluates to false
+        :type false_action_id: str, optional
+        :return: Hook response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+ :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body = dictstrip({
+            'condition': condition,
+            'config': config,
+            'description': description,
+            'enabled': enabled,
+            'falseActionId': false_action_id,
+            'metadata': metadata,
+            'name': name,
+            'projectId': project_id,
+            'trigger': trigger,
+            'trueActionId': true_action_id,
+        })
+        return self._make_request(requests.post, '/hooks', body=body)
+
+    def delete_hook(self, hook_id: str) -> Dict:
+        """Delete hook, calls the DELETE /hooks/{hookId} endpoint.
+
+        :param hook_id: Id of the hook
+        :type hook_id: str
+        :return: Hook response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+    :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.delete, f'/hooks/{hook_id}')
+
+    def update_hook(
+        self,
+        hook_id: str,
+        *,
+        condition: Optional[str] = None,
+        trigger: Optional[str] = None,
+        true_action_id: Optional[str] = None,
+        config: Optional[dict] = None,
+        enabled: Optional[bool] = None,
+        false_action_id: Optional[str] = None,
+        metadata: Optional[dict] = None,
+        **optional_args,
+    ) -> Dict:
+
+        """Get hook, calls the PATCH /hooks/{hookId} endpoint.
+
+        :param hook_id: Id of the hook the hook belongs to
+        :type hook_id: str
+        :param condition: The condition to evaluate true or false when hook is run
+        :type condition: str, optional
+        :param trigger: What will trigger the hook to be run
+        :type trigger: str, optional
+        :param true_action_id: Id of the action that will happen when hook run evaluates to true
+        :type true_action_id: str, optional
+        :param enabled: If the hook is enabled or not
+        :type enabled: bool, optional
+        :param name: Name of the dataset
+        :type name: str, optional
+        :param description: Description of the dataset
+        :type description: str, optional
+        :param config: Dictionary that can be sent as input to true_action_id and false_action_id
+        :type config: dict, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
+        :param false_action_id: Id of the action that will happen when hook run evaluates to false
+        :type false_action_id: str, optional
+        :return: Hook response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+ :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body = dictstrip({
+            'condition': condition,
+            'config': config,
+            'enabled': enabled,
+            'falseActionId': false_action_id,
+            'metadata': metadata,
+            'trigger': trigger,
+            'trueActionId': true_action_id,
+        })
+        body.update(**optional_args)
+        return self._make_request(requests.patch, f'/hooks/{hook_id}', body=body)
+
+    def list_hook_runs(
+        self,
+        hook_id: str,
+        *,
+        max_results: Optional[int] = None,
+        next_token: Optional[str] = None,
+        status: Optional[Queryparam] = None,
+    ) -> Dict:
+        """List hook runs, calls the GET /hooks/{hookId}/runs endpoint.
+
+        :param hook_id: Id of the hook
+        :type hook_id: str
+        :param max_results: Maximum number of results to be returned
+        :type max_results: int, optional
+        :param next_token: A unique token for each page, use the returned token to retrieve the next page.
+        :type next_token: str, optional
+        :param status: Statuses of the hook runs
+        :type status: Queryparam, optional
+        :return: HookRuns response from REST API without the content of each hook
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+ :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        params = dictstrip({
+            'maxResults': max_results,
+            'nextToken': next_token,
+            'status': status,
+        })
+        return self._make_request(requests.get, f'/hooks/{hook_id}/runs', params=dictstrip(params))
+
+    def get_hook_run(self, hook_id: str, run_id: str) -> Dict:
+        """Get hook, calls the GET /hooks/{hookId}/runs/{runId} endpoint.
+
+        :param hook_id: Id of the hook
+        :type hook_id: str
+        :param run_id: Id of the run
+        :type run_id: str
+        :return: Hook response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+    :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.get, f'/hooks/{hook_id}/runs/{run_id}')
+
+    def list_actions(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
+        """List actions available, calls the GET /actions endpoint.
+
+        :param max_results: Maximum number of results to be returned
+        :type max_results: int, optional
+        :param next_token: A unique token for each page, use the returned token to retrieve the next page.
+        :type next_token: str, optional
+        :return: Actions response from REST API without the content of each action
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+ :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        params = {
+            'maxResults': max_results,
+            'nextToken': next_token,
+        }
+        return self._make_request(requests.get, '/actions', params=params)
+
+    def get_action(self, action_id: str) -> Dict:
+        """Get action, calls the GET /actions/{actionId} endpoint.
+
+        :param action_id: Id of the action
+        :type action_id: str
+        :return: Action response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+ :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.get, f'/actions/{action_id}')
+
+    def create_action(
+        self,
+        project_id: str,
+        function_id: str,
+        *,
+        config: Optional[dict] = None,
+        description: Optional[str] = None,
+        enabled: Optional[bool] = None,
+        metadata: Optional[dict] = None,
+        name: Optional[str] = None,
+        secret_id: Optional[str] = None,
+    ) -> Dict:
+
+        """Get action, calls the POST /actions endpoint.
+
+        :param project_id: Id of the project the action belongs to
+        :type project_id: str
+        :param function_id: Id of the function to run
+        :type function_id: str
+        :param enabled: If the action is enabled or not
+        :type enabled: bool, optional
+        :param name: Name of the dataset
+        :type name: str, optional
+        :param description: Description of the dataset
+        :type description: str, optional
+        :param config: Dictionary that can be sent as input to true_action_id and false_action_id
+        :type config: dict, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
+        :param secret_id: Id of the secret to expand as input to functionId
+        :type secret_id: str, optional
+        :return: Action response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+ :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body = dictstrip({
+            'config': config,
+            'description': description,
+            'enabled': enabled,
+            'functionId': function_id,
+            'metadata': metadata,
+            'name': name,
+            'projectId': project_id,
+            'secretId': secret_id,
+        })
+        return self._make_request(requests.post, '/actions', body=body)
+
+    def delete_action(self, action_id: str) -> Dict:
+        """Delete action, calls the DELETE /actions/{actionId} endpoint.
+
+        :param action_id: Id of the action
+        :type action_id: str
+        :return: Action response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+    :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.delete, f'/actions/{action_id}')
+
+    def update_action(
+        self,
+        action_id: str,
+        *,
+        config: Optional[dict] = None,
+        enabled: Optional[bool] = None,
+        function_id: Optional[str] = None,
+        metadata: Optional[dict] = None,
+        secret_id: Optional[str] = None,
+        **optional_args,
+    ) -> Dict:
+
+        """Get action, calls the PATCH /actions/{actionId} endpoint.
+
+        :param action_id: Id of the action the action belongs to
+        :type action_id: str
+        :param enabled: If the action is enabled or not
+        :type enabled: bool, optional
+        :param function_id: Id of the function to run
+        :type function_id: str
+        :param name: Name of the dataset
+        :type name: str, optional
+        :param description: Description of the dataset
+        :type description: str, optional
+        :param config: Dictionary that can be sent as input to true_action_id and false_action_id
+        :type config: dict, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
+        :param secret_id: Id of the secret to expand as input to functionId
+        :type secret_id: str
+        :return: Action response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+ :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body = dictstrip({
+            'config': config,
+            'enabled': enabled,
+            'functionId': function_id,
+            'metadata': metadata,
+            'secretId': secret_id,
+        })
+        body.update(**optional_args)
+        return self._make_request(requests.patch, f'/actions/{action_id}', body=body)
+
+    def list_action_runs(
+        self,
+        action_id: str,
+        *,
+        max_results: Optional[int] = None,
+        next_token: Optional[str] = None,
+        status: Optional[Queryparam] = None,
+    ) -> Dict:
+        """List action runs, calls the GET /actions/{actionId}/runs endpoint.
+
+        :param action_id: Id of the action
+        :type action_id: str
+        :param max_results: Maximum number of results to be returned
+        :type max_results: int, optional
+        :param next_token: A unique token for each page, use the returned token to retrieve the next page.
+        :type next_token: str, optional
+        :param status: Statuses of the action runs
+        :type status: Queryparam, optional
+        :return: ActionRuns response from REST API without the content of each action
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+ :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        params = dictstrip({
+            'maxResults': max_results,
+            'nextToken': next_token,
+            'status': status,
+        })
+        return self._make_request(requests.get, f'/actions/{action_id}/runs', params=dictstrip(params))
+
+    def get_action_run(self, action_id: str, run_id: str) -> Dict:
+        """Get action, calls the GET /actions/{actionId}/runs/{runId} endpoint.
+
+        :param action_id: Id of the action
+        :type action_id: str
+        :param run_id: Id of the run
+        :type run_id: str
+        :return: Action response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+    :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.get, f'/actions/{action_id}/runs/{run_id}')
