@@ -1,5 +1,15 @@
 # Changelog
 
+## Version 11.4.1 - 2024-12-02
+
+- Remove `in_schema` and `out_schema` from `create_transition` and `update_transition`
+
+## Version 11.4.0 - 2024-11-21
+
+- Added `get_prediction`
+- Support run_async argument for `create_predictions`
+- Support `statistics_last_n_days` for `get_training`
+
 ## Version 11.3.0 - 2024-03-27
 
 - Support profile argument when creating a Client

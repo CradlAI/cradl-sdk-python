@@ -17,11 +17,8 @@ from . import service, util
 ])
 @pytest.mark.parametrize('name_and_description', util.name_and_description_combinations())
 def test_create_transition(client: Client, transition_type, parameters, name_and_description):
-    schema = util.create_json_schema()
     response = client.create_transition(
         transition_type,
-        in_schema=schema,
-        out_schema=schema,
         parameters=parameters,
         **name_and_description,
     )
@@ -73,25 +70,9 @@ def test_get_transition_execution(client: Client):
     assert 'status' in response, 'Missing status in response'
 
 
-@pytest.mark.parametrize(('in_schema', 'out_schema'), [
-    (None, None),
-    ({'foo': 'bar'}, None),
-    (None, {'foo': 'bar'}),
-    ({'foo': 'bar'}, {'foo': 'bar'}),
-])
 @pytest.mark.parametrize('name_and_description', util.name_and_description_combinations(True))
-def test_update_transition(
-    client: Client,
-    name_and_description,
-    in_schema,
-    out_schema,
-):
-    response = client.update_transition(
-        service.create_transition_id(),
-        in_schema=in_schema,
-        out_schema=out_schema,
-        **name_and_description,
-    )
+def test_update_transition(client: Client, name_and_description):
+    response = client.update_transition(service.create_transition_id(), **name_and_description)
     logging.info(response)
     assert_transition(response)
 
@@ -119,8 +100,8 @@ def test_update_transition_parameters_manual(client: Client, assets):
     (None, None),
 ])
 def test_update_transition_parameters_docker(
-    client: Client, 
-    environment, 
+    client: Client,
+    environment,
     environment_secrets,
     cpu,
     memory,

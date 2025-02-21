@@ -20,7 +20,8 @@ from . import service
     {'strategy': 'BEST_N_PAGES', 'parameters': {'n': 3, 'collapse': False}},
     None,
 ])
-def test_create_prediction(client: Client, preprocess_config, postprocess_config):
+@pytest.mark.parametrize('run_async', [True, False, None])
+def test_create_prediction(client: Client, preprocess_config, postprocess_config, run_async):
     document_id = service.create_document_id()
     model_id = service.create_model_id()
     response = client.create_prediction(
@@ -28,6 +29,7 @@ def test_create_prediction(client: Client, preprocess_config, postprocess_config
         model_id,
         preprocess_config=dictstrip(preprocess_config) if preprocess_config else None,
         postprocess_config=postprocess_config,
+        run_async=run_async,
     )
     assert 'predictionId' in response, 'Missing predictionId in response'
 
@@ -38,4 +40,13 @@ def test_create_prediction(client: Client, preprocess_config, postprocess_config
 def test_list_predictions(client: Client, sort_by, order, model_id):
     response = client.list_predictions(sort_by=sort_by, order=order, model_id=model_id)
     logging.info(response)
+    assert 'predictions' in response, 'Missing predictions in response'
+
+
+@pytest.mark.parametrize('prediction_id', [service.create_prediction_id(), None])
+def test_get_prediction(client: Client, prediction_id):
+    response = client.get_prediction(prediction_id)
+    logging.info(response)
+    assert 'predictionId' in response, 'Missing prediction in response'
+    assert 'inferenceTime' in response, 'Missing inferenceTime in response'
     assert 'predictions' in response, 'Missing predictions in response'

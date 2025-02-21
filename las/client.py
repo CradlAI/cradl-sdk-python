@@ -646,7 +646,7 @@ class Client:
 
         :param dataset_id: Id of the dataset
         :type dataset_id: str
-        :param delete_documents: Set to true to delete documents in dataset before deleting dataset
+        :param delete_documents: Set to True to delete documents in dataset before deleting dataset
         :type delete_documents: bool
         :return: Dataset response from REST API
         :rtype: dict
@@ -1350,20 +1350,23 @@ class Client:
         body.update(**optional_args)
         return self._make_request(requests.post, f'/models/{model_id}/trainings', body=body)
 
-    def get_training(self, model_id: str, training_id: str) -> Dict:
+    def get_training(self, model_id: str, training_id: str, statistics_last_n_days: Optional[int] = None) -> Dict:
         """Get training, calls the GET /models/{modelId}/trainings/{trainingId} endpoint.
 
         :param model_id: ID of the model
         :type model_id: str
         :param training_id: ID of the training
         :type training_id: str
+        :param statistics_last_n_days: Integer between 1 and 30
+        :type statistics_last_n_days: int, optional
         :return: Training response from REST API
         :rtype: dict
 
         :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
  :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-        return self._make_request(requests.get, f'/models/{model_id}/trainings/{training_id}')
+        params = {'statisticsLastNDays': statistics_last_n_days}
+        return self._make_request(requests.get, f'/models/{model_id}/trainings/{training_id}', params=params)
 
     def list_trainings(self, model_id, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
         """List trainings available, calls the GET /models/{modelId}/trainings endpoint.
@@ -1536,6 +1539,7 @@ class Client:
         training_id: Optional[str] = None,
         preprocess_config: Optional[dict] = None,
         postprocess_config: Optional[dict] = None,
+        run_async: Optional[bool] = None,
     ) -> Dict:
         """Create a prediction on a document using specified model, calls the POST /predictions endpoint.
 
@@ -1576,6 +1580,8 @@ class Client:
             {'strategy': 'BEST_N_PAGES', 'parameters': {'n': 3}}
             {'strategy': 'BEST_N_PAGES', 'parameters': {'n': 3, 'collapse': False}}
         :type postprocess_config: dict, optional
+        :param run_async: If True run the prediction async, if False run sync. if omitted run synchronously.
+        :type run_async: bool
         :return: Prediction response from REST API
         :rtype: dict
 
@@ -1588,6 +1594,7 @@ class Client:
             'trainingId': training_id,
             'preprocessConfig': preprocess_config,
             'postprocessConfig': postprocess_config,
+            'async': run_async,
         }
         return self._make_request(requests.post, '/predictions', body=dictstrip(body))
 
@@ -1630,6 +1637,23 @@ class Client:
             'sortBy': sort_by,
         }
         return self._make_request(requests.get, '/predictions', params=dictstrip(params))
+
+    def get_prediction(self, prediction_id: str) -> Dict:
+        """Get prediction, calls the GET /predictions/{predictionId} endpoint.
+
+        >>> from las.client import Client
+        >>> client = Client()
+        >>> client.get_prediction(prediction_id='<prediction id>')
+
+        :param prediction_id: Id of the prediction
+        :type prediction_id: str
+        :return: Asset response from REST API with content
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+ :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.get, f'/predictions/{prediction_id}')
 
     def get_plan(self, plan_id: str) -> Dict:
         """Get information about a specific plan, calls the GET /plans/{plan_id} endpoint.
@@ -1828,8 +1852,6 @@ class Client:
         self,
         transition_type: str,
         *,
-        in_schema: Optional[dict] = None,
-        out_schema: Optional[dict] = None,
         parameters: Optional[dict] = None,
         **optional_args,
     ) -> Dict:
@@ -1839,25 +1861,19 @@ class Client:
         >>> from pathlib import Path
         >>> from las.client import Client
         >>> client = Client()
-        >>> in_schema = {'$schema': 'https://json-schema.org/draft-04/schema#', 'title': 'in', 'properties': {...} }
-        >>> out_schema = {'$schema': 'https://json-schema.org/draft-04/schema#', 'title': 'out', 'properties': {...} }
         >>> # A typical docker transition
         >>> docker_params = {
         >>>     'imageUrl': '<image_url>',
         >>>     'credentials': {'username': '<username>', 'password': '<password>'}
         >>> }
-        >>> client.create_transition('docker', in_schema=in_schema, out_schema=out_schema, params=docker_params)
+        >>> client.create_transition('docker', params=docker_params)
         >>> # A manual transition with UI
         >>> assets = {'jsRemoteComponent': 'las:asset:<hex-uuid>', '<other asset name>': 'las:asset:<hex-uuid>'}
         >>> manual_params = {'assets': assets}
-        >>> client.create_transition('manual', in_schema=in_schema, out_schema=out_schema, params=manual_params)
+        >>> client.create_transition('manual', params=manual_params)
 
         :param transition_type: Type of transition "docker"|"manual"
         :type transition_type: str
-        :param in_schema: Json-schema that defines the input to the transition
-        :type in_schema: dict, optional
-        :param out_schema: Json-schema that defines the output of the transition
-        :type out_schema: dict, optional
         :param name: Name of the transition
         :type name: str, optional
         :param parameters: Parameters to the corresponding transition type
@@ -1871,8 +1887,6 @@ class Client:
  :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
-            'inputJsonSchema': in_schema,
-            'outputJsonSchema': out_schema,
             'transitionType': transition_type,
             'parameters': parameters,
         })
@@ -1933,8 +1947,6 @@ class Client:
         self,
         transition_id: str,
         *,
-        in_schema: Optional[dict] = None,
-        out_schema: Optional[dict] = None,
         assets: Optional[dict] = None,
         cpu: Optional[int] = None,
         memory: Optional[int] = None,
@@ -1956,10 +1968,6 @@ class Client:
         :type name: str, optional
         :param description: Description of the transition
         :type description: str, optional
-        :param in_schema: Json-schema that defines the input to the transition
-        :type in_schema: dict, optional
-        :param out_schema: Json-schema that defines the output of the transition
-        :type out_schema: dict, optional
         :param assets: A dictionary where the values are assetIds that can be used in a manual transition
         :type assets: dict, optional
         :param environment: Environment variables to use for a docker transition
@@ -1983,11 +1991,7 @@ class Client:
         :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
  :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-        body = dictstrip({
-            'inputJsonSchema': in_schema,
-            'outputJsonSchema': out_schema,
-        })
-
+        body = {}
         parameters = dictstrip({
             'assets': assets,
             'cpu': cpu,
