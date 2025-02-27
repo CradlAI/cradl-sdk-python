@@ -1540,6 +1540,8 @@ class Client:
         preprocess_config: Optional[dict] = None,
         postprocess_config: Optional[dict] = None,
         run_async: Optional[bool] = None,
+        project_id: Optional[str] = None,
+        project_run_id: Optional[str] = None,
     ) -> Dict:
         """Create a prediction on a document using specified model, calls the POST /predictions endpoint.
 
@@ -1595,6 +1597,8 @@ class Client:
             'preprocessConfig': preprocess_config,
             'postprocessConfig': postprocess_config,
             'async': run_async,
+            'projectId': project_id,
+            'projectRunId': project_run_id,
         }
         return self._make_request(requests.post, '/predictions', body=dictstrip(body))
 
