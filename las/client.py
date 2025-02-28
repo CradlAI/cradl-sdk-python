@@ -2701,6 +2701,8 @@ class Client:
         input: dict,
         *,
         metadata: Optional[dict] = None,
+        project_id: str = None,
+        project_run_id: str = None,
         **optional_args,
     ) -> Dict:
         """Creates a validation, calls the POST /validations endpoint.
@@ -2721,7 +2723,12 @@ class Client:
         :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
  :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-        body = dictstrip({'input': input, 'metadata': metadata})
+        body = dictstrip({
+            'input': input,
+            'metadata': metadata,
+            'projectId': project_id,
+            'projectRunId': project_run_id,
+        })
         body.update(**optional_args)
         return self._make_request(requests.post, f'/validations/{validation_id}/tasks', body=body)
 
