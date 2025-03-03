@@ -726,12 +726,13 @@ class Client:
     def create_document(
         self,
         content: Content,
-        content_type: str = None,
         *,
         consent_id: Optional[str] = None,
         dataset_id: str = None,
+        description: str = None,
         ground_truth: Sequence[Dict[str, str]] = None,
         metadata: Optional[dict] = None,
+        name: str = None,
         project_id: str = None,
         project_run_id: str = None,
         retention_in_days: int = None,
@@ -744,8 +745,6 @@ class Client:
 
         :param content: Content to POST
         :type content: Content
-        :param content_type: MIME type for the document
-        :type content_type: str, optional
         :param consent_id: Id of the consent that marks the owner of the document
         :type consent_id: str, optional
         :param dataset_id: Id of the associated dataset
@@ -772,8 +771,10 @@ class Client:
         body = {
             'consentId': consent_id,
             'datasetId': dataset_id,
+            'description': description,
             'groundTruth': ground_truth,
             'metadata': metadata,
+            'name': name,
             'projectId': project_id,
             'projectRunId': project_run_id,
             'retentionInDays': retention_in_days,
