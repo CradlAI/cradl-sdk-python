@@ -2702,7 +2702,6 @@ class Client:
         input: dict,
         *,
         metadata: Optional[dict] = None,
-        project_id: str = None,
         project_run_id: str = None,
         **optional_args,
     ) -> Dict:
@@ -2727,7 +2726,6 @@ class Client:
         body = dictstrip({
             'input': input,
             'metadata': metadata,
-            'projectId': project_id,
             'projectRunId': project_run_id,
         })
         body.update(**optional_args)
