@@ -2677,13 +2677,25 @@ class Client:
         }
         return self._make_request(requests.get, '/validations', params=params)
 
-    def create_validation(self, *, metadata: Optional[dict] = None, **optional_args) -> Dict:
+    def create_validation(
+        self,
+        project_id: str,
+        *,
+        config: Optional[dict] = None,
+        metadata: Optional[dict] = None,
+        **optional_args,
+    ) -> Dict:
+
         """Creates a validation, calls the POST /validations endpoint.
 
+        :param project_id: Id of the project
+        :type project_id: str
         :param name: Name of the validation
         :type name: str, optional
         :param description: Description of the validation
         :type description: str, optional
+        :param config: Dictionary that is used for configuration of the validation
+        :type config: dict, optional
         :param metadata: Dictionary that can be used to store additional information
         :type metadata: dict, optional
         :return: Dataset response from REST API
@@ -2692,7 +2704,11 @@ class Client:
         :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
  :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-        body = dictstrip({'metadata': metadata})
+        body = dictstrip({
+            'projectId': project_id,
+            'config': config,
+            'metadata': metadata,
+            })
         body.update(**optional_args)
         return self._make_request(requests.post, '/validations', body=body)
 
@@ -2736,6 +2752,7 @@ class Client:
         validation_id: str,
         validation_task_id: str,
         output: dict,
+        status: str,
         *,
         metadata: Optional[dict] = None,
         **optional_args,
@@ -2747,7 +2764,9 @@ class Client:
         :param validation_task_id: Id of the validation task
         :type validation_task_id: str
         :param output: Dictionary that can be used to store additional information
-        :type output: dict, optional
+        :type output: dict, required if status is present, otherwise optional
+        :param status: Status of the task
+        :type status: str, required if output is present, otherwise optional
         :param name: Name of the validation
         :type name: str, optional
         :param description: Description of the validation
@@ -2760,13 +2779,44 @@ class Client:
         :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
  :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-        body = dictstrip({'output': output, 'metadata': metadata})
+        body = dictstrip({'output': output, 'metadata': metadata, 'status': status})
         body.update(**optional_args)
         return self._make_request(
             requests_fn=requests.patch,
             path=f'/validations/{validation_id}/tasks/{validation_task_id}',
             body=body,
         )
+
+    def list_validation_tasks(
+        self,
+        validation_id: str,
+        *,
+        max_results: Optional[int] = None,
+        next_token: Optional[str] = None,
+        status: Optional[Queryparam] = None,
+    ) -> Dict:
+        """List validation tasks, calls the GET /validations/{validationId}/tasks endpoint.
+
+        :param validation_id: Id of the validation
+        :type validation_id: str
+        :param max_results: Maximum number of results to be returned
+        :type max_results: int, optional
+        :param next_token: A unique token for each page, use the returned token to retrieve the next page.
+        :type next_token: str, optional
+        :param status: Statuses of the validation tasks
+        :type status: Queryparam, optional
+        :return: ValidationTasks response from REST API without the content of each validation
+        :rtype: dict
+
+        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
+ :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        params = dictstrip({
+            'maxResults': max_results,
+            'nextToken': next_token,
+            'status': status,
+        })
+        return self._make_request(requests.get, f'/validations/{validation_id}/tasks', params=dictstrip(params))
 
     def create_project(
         self,
@@ -2970,13 +3020,13 @@ class Client:
     def create_hook(
         self,
         project_id: str,
-        condition: str,
         trigger: str,
-        true_action_id: str,
         *,
         config: Optional[dict] = None,
         description: Optional[str] = None,
         enabled: Optional[bool] = None,
+        function_id: Optional[str] = None,
+        true_action_id: Optional[str] = None,
         false_action_id: Optional[str] = None,
         metadata: Optional[dict] = None,
         name: Optional[str] = None,
@@ -2986,10 +3036,10 @@ class Client:
 
         :param project_id: Id of the project the hook belongs to
         :type project_id: str
-        :param condition: The condition to evaluate true or false when hook is run
-        :type condition: str
         :param trigger: What will trigger the hook to be run
         :type trigger: str
+        :param function_id: Id of the function to evaluate whether to run the false or true action
+        :type function_id: str
         :param true_action_id: Id of the action that will happen when hook run evaluates to true
         :type true_action_id: str
         :param enabled: If the hook is enabled or not
@@ -3011,11 +3061,11 @@ class Client:
  :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
-            'condition': condition,
             'config': config,
             'description': description,
             'enabled': enabled,
             'falseActionId': false_action_id,
+            'functionId': function_id,
             'metadata': metadata,
             'name': name,
             'projectId': project_id,
@@ -3041,7 +3091,6 @@ class Client:
         self,
         hook_id: str,
         *,
-        condition: Optional[str] = None,
         trigger: Optional[str] = None,
         true_action_id: Optional[str] = None,
         config: Optional[dict] = None,
@@ -3055,8 +3104,6 @@ class Client:
 
         :param hook_id: Id of the hook the hook belongs to
         :type hook_id: str
-        :param condition: The condition to evaluate true or false when hook is run
-        :type condition: str, optional
         :param trigger: What will trigger the hook to be run
         :type trigger: str, optional
         :param true_action_id: Id of the action that will happen when hook run evaluates to true
@@ -3080,7 +3127,6 @@ class Client:
  :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
-            'condition': condition,
             'config': config,
             'enabled': enabled,
             'falseActionId': false_action_id,
