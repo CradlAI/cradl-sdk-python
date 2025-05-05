@@ -26,7 +26,6 @@ def test_invalid_credentials(
     error_content,
     error_name,
     content,
-    mime_type,
     client_with_access_token,
 ):
 
@@ -41,7 +40,7 @@ def test_invalid_credentials(
         m.delete('/'.join([client.credentials.api_endpoint, 'documents']), status_code=error_code, content=error_content)
 
         with pytest.raises(error_name):
-            client.create_document(content, mime_type, consent_id=consent_id)
+            client.create_document(content, consent_id=consent_id)
 
         with pytest.raises(error_name):
             client.create_prediction(document_id, model_id)

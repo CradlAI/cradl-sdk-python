@@ -12,12 +12,10 @@ def test_create_document(
     static_client: Client,
     content,
     metadata,
-    mime_type,
 ):
     consent_id = service.create_consent_id()
     post_documents_response = static_client.create_document(
         content,
-        mime_type,
         consent_id=consent_id,
         metadata=metadata,
     )
