@@ -31,7 +31,7 @@ jobs:
     - name: Push new tag
       run: |
         git config --global user.name "Tag Bot"
-        git config --global user.email "hello@lucidtech.ai"
+        git config --global user.email "hello@cradl.ai"
         version_name=$(python setup.py --version)
         git tag -a $version_name -m "Version $version_name"
         git push origin $version_name

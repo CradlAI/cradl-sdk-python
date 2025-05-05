@@ -176,7 +176,7 @@ class FileFormatException(ClientException):
 
 
 class Client:
-    """A low level client to invoke api methods from Lucidtech AI Services."""
+    """A low level client to invoke api methods from Cradl."""
     def __init__(self, credentials: Optional[Credentials] = None, profile=None):
         """:param credentials: Credentials to use, instance of :py:class:`~cradl.Credentials`
         :type credentials: Credentials"""
@@ -2308,7 +2308,7 @@ class Client:
         **optional_args,
     ) -> Dict:
         """Creates a new workflow, calls the POST /workflows endpoint.
-        Check out Lucidtech's tutorials for more info on how to create a workflow.
+        Check out Cradl's tutorials for more info on how to create a workflow.
 
         >>> from cradl.client import Client
         >>> from pathlib import Path

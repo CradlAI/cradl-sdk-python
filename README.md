@@ -1,6 +1,6 @@
-# Python SDK for Lucidtech AI Services API
+# Python SDK for Cradl
 
-![Github Actions build status](https://github.com/LucidtechAI/cradl-sdk-python/workflows/main/badge.svg)
+![Github Actions build status](https://github.com/CradlAI/cradl-sdk-python/workflows/main/badge.svg)
 
 ## Documentation
 
@@ -9,7 +9,7 @@
 ## Installation
 
 ```bash
-$ pip install lucidtech-cradl
+$ pip install cradl
 ```
 
 ## Usage

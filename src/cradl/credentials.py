@@ -37,7 +37,7 @@ class Credentials:
         auth_endpoint: str,
         api_endpoint: str,
         cached_profile: str = None,
-        cache_path: Path = Path(expanduser('~/.lucidtech/token-cache.json')),
+        cache_path: Path = Path(expanduser('~/.cradl/token-cache.json')),
     ):
         if not all([client_id, client_secret, auth_endpoint, api_endpoint]):
             raise MissingCredentials
@@ -122,9 +122,9 @@ def read_from_environ() -> List[Optional[str]]:
     )]
 
 
-def read_from_file(credentials_path: str = expanduser('~/.lucidtech/credentials.cfg'),
+def read_from_file(credentials_path: str = expanduser('~/.cradl/credentials.cfg'),
                    section: str = 'default') -> List[Optional[str]]:
-    """Read a config file and return credentials from it. Defaults to '~/.lucidtech/credentials.cfg'.
+    """Read a config file and return credentials from it. Defaults to '~/.cradl/credentials.cfg'.
 
     :param credentials_path: Path to read credentials from.
     :type credentials_path: str
@@ -151,7 +151,7 @@ def read_from_file(credentials_path: str = expanduser('~/.lucidtech/credentials.
 
 def guess_credentials(profile=None) -> Credentials:
     """Tries to fetch Credentials first by looking at the environment variables, next by looking at the default
-    credentials path ~/.lucidtech/credentials.cfg. Note that if not all the required environment variables
+    credentials path ~/.cradl/credentials.cfg. Note that if not all the required environment variables
     are present, _all_ variables will be disregarded, and the credentials in the default path will be used.
 
     :return: Credentials from file
@@ -163,7 +163,7 @@ def guess_credentials(profile=None) -> Credentials:
         try:
             return Credentials(*read_from_file(section=profile))
         except:
-            raise MissingCredentials(f'Could not find valid credentials for {profile} in ~/.lucidtech/credentials.cfg')
+            raise MissingCredentials(f'Could not find valid credentials for {profile} in ~/.cradl/credentials.cfg')
 
     for guesser in [read_from_environ, read_from_file]:
         args = guesser()  # type: ignore
