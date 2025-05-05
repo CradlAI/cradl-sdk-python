@@ -14,11 +14,11 @@ from requests.auth import HTTPBasicAuth
 NULL_TOKEN = '', 0
 
 
-ccradls MissingCredentials(Exception):
+class MissingCredentials(Exception):
     pass
 
 
-ccradls Credentials:
+class Credentials:
     """Used to fetch and store credentials and to generate/cache an access token.
 
     :param client_id: The client id
@@ -155,9 +155,9 @@ def guess_credentials(profile=None) -> Credentials:
     are present, _all_ variables will be disregarded, and the credentials in the default path will be used.
 
     :return: Credentials from file
-    :rtype: :py:ccradls:`~cradl.Credentials`
+    :rtype: :py:class:`~cradl.Credentials`
 
-    :raises: :py:ccradls:`~cradl.MissingCredentials`"""
+    :raises: :py:class:`~cradl.MissingCredentials`"""
 
     if profile:
         try:

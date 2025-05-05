@@ -132,53 +132,53 @@ def _(content, find_content_type=False, base_64_encode=True):
     return _parsed_content(raw, find_content_type, base_64_encode)
 
 
-ccradls EmptyRequestError(ValueError):
+class EmptyRequestError(ValueError):
     """An EmptyRequestError is raised if the request body is empty when expected not to be empty."""
     pass
 
 
-ccradls ClientException(Exception):
+class ClientException(Exception):
     """A ClientException is raised if the client refuses to
     send request due to incorrect usage or bad request data."""
     pass
 
 
-ccradls InvalidCredentialsException(ClientException):
+class InvalidCredentialsException(ClientException):
     """An InvalidCredentialsException is raised if api key, access key id or secret access key is invalid."""
     pass
 
 
-ccradls TooManyRequestsException(ClientException):
+class TooManyRequestsException(ClientException):
     """A TooManyRequestsException is raised if you have reached the number of requests per second limit
     associated with your credentials."""
     pass
 
 
-ccradls LimitExceededException(ClientException):
+class LimitExceededException(ClientException):
     """A LimitExceededException is raised if you have reached the limit of total requests per month
     associated with your credentials."""
     pass
 
 
-ccradls BadRequest(ClientException):
+class BadRequest(ClientException):
     """BadRequest is raised if you have made a request that is disqualified based on the input"""
     pass
 
 
-ccradls NotFound(ClientException):
+class NotFound(ClientException):
     """NotFound is raised when you try to access a resource that is not found"""
     pass
 
 
-ccradls FileFormatException(ClientException):
+class FileFormatException(ClientException):
     """A FileFormatException is raised if the file format is not supported by the api."""
     pass
 
 
-ccradls Client:
+class Client:
     """A low level client to invoke api methods from Lucidtech AI Services."""
     def __init__(self, credentials: Optional[Credentials] = None, profile=None):
-        """:param credentials: Credentials to use, instance of :py:ccradls:`~cradl.Credentials`
+        """:param credentials: Credentials to use, instance of :py:class:`~cradl.Credentials`
         :type credentials: Credentials"""
         self.credentials = credentials or guess_credentials(profile)
 
@@ -273,8 +273,8 @@ ccradls Client:
         :return: AppClient response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
             'logoutUrls': logout_urls,
@@ -297,8 +297,8 @@ ccradls Client:
         :return: AppClient response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/appClients/{app_client_id}')
 
@@ -316,8 +316,8 @@ ccradls Client:
         :return: AppClients response from REST API without the content of each appClient
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -339,8 +339,8 @@ ccradls Client:
         :return: AppClient response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         if 'role_ids' in optional_args:
             optional_args['roleIds'] = optional_args.pop('role_ids') or []
@@ -359,8 +359,8 @@ ccradls Client:
         :return: AppClient response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/appClients/{app_client_id}')
 
@@ -380,8 +380,8 @@ ccradls Client:
         :return: Asset response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         content, _ = parse_content(content)
         body = {
@@ -404,8 +404,8 @@ ccradls Client:
         :return: Assets response from REST API without the content of each asset
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -425,8 +425,8 @@ ccradls Client:
         :return: Asset response from REST API with content
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/assets/{asset_id}')
 
@@ -448,8 +448,8 @@ ccradls Client:
         :return: Asset response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         content = optional_args.get('content')
 
@@ -471,8 +471,8 @@ ccradls Client:
         :return: Asset response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/assets/{asset_id}')
 
@@ -486,8 +486,8 @@ ccradls Client:
         :return: PaymentMethod response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.post, '/paymentMethods', body=optional_args)
 
@@ -501,8 +501,8 @@ ccradls Client:
         :return: PaymentMethods response from REST API without the content of each payment method
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -518,8 +518,8 @@ ccradls Client:
         :return: PaymentMethod response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/paymentMethods/{payment_method_id}')
 
@@ -543,8 +543,8 @@ ccradls Client:
         :return: PaymentMethod response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
 
         body = {**optional_args}
@@ -562,8 +562,8 @@ ccradls Client:
         :return: PaymentMethod response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
 
         return self._make_request(requests.delete, f'/paymentMethods/{payment_method_id}')
@@ -580,8 +580,8 @@ ccradls Client:
         :return: Dataset response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({'metadata': metadata})
         body.update(**optional_args)
@@ -597,8 +597,8 @@ ccradls Client:
         :return: Datasets response from REST API without the content of each dataset
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -614,8 +614,8 @@ ccradls Client:
         :return: Dataset response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/datasets/{dataset_id}')
 
@@ -633,8 +633,8 @@ ccradls Client:
         :return: Dataset response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
 
         body = dictstrip({'metadata': metadata})
@@ -651,8 +651,8 @@ ccradls Client:
         :return: Dataset response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         if delete_documents:
             self.delete_documents(dataset_id=dataset_id, delete_all=True)
@@ -669,8 +669,8 @@ ccradls Client:
         :return: Transformation response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
 
         body = {'operations': operations}
@@ -697,8 +697,8 @@ ccradls Client:
         :return: Transformations response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -718,8 +718,8 @@ ccradls Client:
         :return: Transformation response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/datasets/{dataset_id}/transformations/{transformation_id}')
 
@@ -763,8 +763,8 @@ ccradls Client:
         :return: Document response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         content_bytes, _ = parse_content(content, False, False)
 
@@ -815,8 +815,8 @@ ccradls Client:
         :return: Documents response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'consentId': consent_id,
@@ -857,8 +857,8 @@ ccradls Client:
         :return: Documents response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = dictstrip({
             'consentId': consent_id,
@@ -918,8 +918,8 @@ ccradls Client:
         :return: Document response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         document = self._make_request(requests.get, f'/documents/{document_id}')
         query_params = dictstrip({
@@ -963,8 +963,8 @@ ccradls Client:
         :return: Document response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
             'groundTruth': ground_truth,
@@ -986,8 +986,8 @@ ccradls Client:
         :return: Model response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/documents/{document_id}')
 
@@ -1022,8 +1022,8 @@ ccradls Client:
         :return: Logs response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         url = '/logs'
         params = {
@@ -1049,8 +1049,8 @@ ccradls Client:
         :return: Log response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/logs/{log_id}')
 
@@ -1115,8 +1115,8 @@ ccradls Client:
         :return: Model response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         if base_model:
             metadata = {
@@ -1159,8 +1159,8 @@ ccradls Client:
         :return: Models response from REST API without the content of each model
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -1179,8 +1179,8 @@ ccradls Client:
         :return: Model response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {'statisticsLastNDays': statistics_cradlt_n_days}
         return self._make_request(requests.get, f'/models/{quote(model_id, safe="")}', params=params)
@@ -1245,8 +1245,8 @@ ccradls Client:
         :return: Model response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
             'width': width,
@@ -1271,8 +1271,8 @@ ccradls Client:
         :return: Model response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/models/{model_id}')
 
@@ -1290,8 +1290,8 @@ ccradls Client:
         :return: Data Bundle response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
 
         body = {'datasetIds': dataset_ids}
@@ -1308,8 +1308,8 @@ ccradls Client:
         :return: DataBundle response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/models/{model_id}/dataBundles/{data_bundle_id}')
 
@@ -1339,8 +1339,8 @@ ccradls Client:
         :return: Training response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
 
         body = dictstrip({
@@ -1363,8 +1363,8 @@ ccradls Client:
         :return: Training response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {'statisticsLastNDays': statistics_cradlt_n_days}
         return self._make_request(requests.get, f'/models/{model_id}/trainings/{training_id}', params=params)
@@ -1381,8 +1381,8 @@ ccradls Client:
         :return: Trainings response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -1413,8 +1413,8 @@ ccradls Client:
         :return: Training response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = {}
         if 'deployment_environment_id' in optional_args:
@@ -1441,8 +1441,8 @@ ccradls Client:
         :return: Data Bundles response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -1469,8 +1469,8 @@ ccradls Client:
         :return: Data Bundle response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.patch, f'/models/{model_id}/dataBundles/{data_bundle_id}', body=optional_args)
 
@@ -1485,8 +1485,8 @@ ccradls Client:
         :return: Data Bundle response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/models/{model_id}/dataBundles/{data_bundle_id}')
 
@@ -1498,8 +1498,8 @@ ccradls Client:
         :return: Organization response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/organizations/{organization_id}')
 
@@ -1523,8 +1523,8 @@ ccradls Client:
         :return: Organization response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = {**optional_args}
         if payment_method_id:
@@ -1588,8 +1588,8 @@ ccradls Client:
         :return: Prediction response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = {
             'documentId': document_id,
@@ -1631,8 +1631,8 @@ ccradls Client:
         :return: Predictions response from REST API without the content of each prediction
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -1655,8 +1655,8 @@ ccradls Client:
         :return: Asset response from REST API with content
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/predictions/{prediction_id}')
 
@@ -1672,8 +1672,8 @@ ccradls Client:
         :return: Plan response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
 
         return self._make_request(requests.get, f'/plans/{quote(plan_id, safe="")}')
@@ -1700,8 +1700,8 @@ ccradls Client:
         :return: Plans response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
-    :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+    :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -1723,8 +1723,8 @@ ccradls Client:
         :return: DeploymentEnvironment response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
 
         return self._make_request(requests.get, f'/deploymentEnvironments/{quote(deployment_environment_id, safe="")}')
@@ -1751,8 +1751,8 @@ ccradls Client:
         :return: DeploymentEnvironments response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
-    :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+    :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'owner': owner,
@@ -1778,8 +1778,8 @@ ccradls Client:
         :return: Secret response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = {
             'data': data,
@@ -1801,8 +1801,8 @@ ccradls Client:
         :return: Secrets response from REST API without the username of each secret
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -1829,8 +1829,8 @@ ccradls Client:
         :return: Secret response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({'data': data})
         body.update(**optional_args)
@@ -1848,8 +1848,8 @@ ccradls Client:
         :return: Secret response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/secrets/{secret_id}')
 
@@ -1888,8 +1888,8 @@ ccradls Client:
         :return: Transition response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
             'transitionType': transition_type,
@@ -1920,8 +1920,8 @@ ccradls Client:
         :return: Transitions response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         url = '/transitions'
         params = {
@@ -1943,8 +1943,8 @@ ccradls Client:
         :return: Transition response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/transitions/{transition_id}')
 
@@ -1993,8 +1993,8 @@ ccradls Client:
         :return: Transition response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = {}
         parameters = dictstrip({
@@ -2029,8 +2029,8 @@ ccradls Client:
         :return: Transition execution response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         endpoint = f'/transitions/{transition_id}/executions'
         return self._make_request(requests.post, endpoint, body={})
@@ -2048,8 +2048,8 @@ ccradls Client:
         :return: Transition response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/transitions/{transition_id}')
 
@@ -2087,8 +2087,8 @@ ccradls Client:
         :return: Transition executions responses from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         url = f'/transitions/{transition_id}/executions'
         params = {
@@ -2115,8 +2115,8 @@ ccradls Client:
         :return: Transition execution responses from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         url = f'/transitions/{transition_id}/executions/{execution_id}'
         return self._make_request(requests.get, url)
@@ -2156,8 +2156,8 @@ ccradls Client:
         :return: Transition execution response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
 
         url = f'/transitions/{transition_id}/executions/{execution_id}'
@@ -2185,8 +2185,8 @@ ccradls Client:
         :return: Empty response
         :rtype: None
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         endpoint = f'/transitions/{transition_id}/executions/{execution_id}/heartbeats'
         return self._make_request(requests.post, endpoint, body={})
@@ -2205,8 +2205,8 @@ ccradls Client:
         :return: User response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = {
             'email': email,
@@ -2232,8 +2232,8 @@ ccradls Client:
         :return: Users response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -2253,8 +2253,8 @@ ccradls Client:
         :return: User response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/users/{user_id}')
 
@@ -2272,8 +2272,8 @@ ccradls Client:
         :return: User response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         if 'role_ids' in optional_args:
             optional_args['roleIds'] = optional_args.pop('role_ids') or []
@@ -2292,8 +2292,8 @@ ccradls Client:
         :return: User response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/users/{user_id}')
 
@@ -2335,8 +2335,8 @@ ccradls Client:
         :return: Workflow response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
             'completedConfig': completed_config,
@@ -2363,8 +2363,8 @@ ccradls Client:
         :return: Workflows response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -2384,8 +2384,8 @@ ccradls Client:
         :return: Workflow response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/workflows/{workflow_id}')
 
@@ -2426,8 +2426,8 @@ ccradls Client:
         :return: Workflow response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
             'completedConfig': completed_config,
@@ -2454,8 +2454,8 @@ ccradls Client:
         :return: Workflow response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/workflows/{workflow_id}')
 
@@ -2475,8 +2475,8 @@ ccradls Client:
         :return: Workflow execution response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         endpoint = f'/workflows/{workflow_id}/executions'
         return self._make_request(requests.post, endpoint, body={'input': content})
@@ -2518,8 +2518,8 @@ ccradls Client:
         :return: Workflow executions responses from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         url = f'/workflows/{workflow_id}/executions'
         params = {
@@ -2550,8 +2550,8 @@ ccradls Client:
         :return: Workflow execution response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         url = f'/workflows/{workflow_id}/executions/{execution_id}'
         return self._make_request(requests.get, url)
@@ -2583,8 +2583,8 @@ ccradls Client:
         :return: Workflow execution response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         url = f'/workflows/{workflow_id}/executions/{execution_id}'
         body = {
@@ -2608,8 +2608,8 @@ ccradls Client:
         :return: WorkflowExecution response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/workflows/{workflow_id}/executions/{execution_id}')
 
@@ -2623,8 +2623,8 @@ ccradls Client:
         :return: Roles response from REST API without the content of each role
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -2640,8 +2640,8 @@ ccradls Client:
         :return: Role response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/roles/{role_id}')
 
@@ -2653,8 +2653,8 @@ ccradls Client:
         :return: Validation response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/validations/{validation_id}')
 
@@ -2668,8 +2668,8 @@ ccradls Client:
         :return: Validations response from REST API without the content of each validation
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -2701,8 +2701,8 @@ ccradls Client:
         :return: Dataset response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
             'projectId': project_id,
@@ -2736,8 +2736,8 @@ ccradls Client:
         :return: Dataset response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
             'input': input,
@@ -2776,8 +2776,8 @@ ccradls Client:
         :return: Dataset response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({'output': output, 'metadata': metadata, 'status': status})
         body.update(**optional_args)
@@ -2808,8 +2808,8 @@ ccradls Client:
         :return: ValidationTasks response from REST API without the content of each validation
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = dictstrip({
             'maxResults': max_results,
@@ -2839,8 +2839,8 @@ ccradls Client:
         :return: Project response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
             'description': description,
@@ -2858,8 +2858,8 @@ ccradls Client:
         :return: Project response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/projects/{project_id}')
 
@@ -2886,8 +2886,8 @@ ccradls Client:
         :return: Project response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
             'metadata': metadata,
@@ -2904,8 +2904,8 @@ ccradls Client:
         :return: Project response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/projects/{project_id}')
 
@@ -2919,8 +2919,8 @@ ccradls Client:
         :return: Projects response from REST API without the content of each project
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -2936,8 +2936,8 @@ ccradls Client:
         :return: Project response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.post, f'/projects/{project_id}/runs', body={})
 
@@ -2960,8 +2960,8 @@ ccradls Client:
         :return: ProjectRuns response from REST API without the content of each project
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = dictstrip({
             'history': history,
@@ -2980,8 +2980,8 @@ ccradls Client:
         :return: Project response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/projects/{project_id}/runs/{run_id}')
 
@@ -2995,8 +2995,8 @@ ccradls Client:
         :return: Hooks response from REST API without the content of each hook
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -3012,8 +3012,8 @@ ccradls Client:
         :return: Hook response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/hooks/{hook_id}')
 
@@ -3057,8 +3057,8 @@ ccradls Client:
         :return: Hook response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
             'config': config,
@@ -3082,8 +3082,8 @@ ccradls Client:
         :return: Hook response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
-    :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+    :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/hooks/{hook_id}')
 
@@ -3123,8 +3123,8 @@ ccradls Client:
         :return: Hook response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
             'config': config,
@@ -3158,8 +3158,8 @@ ccradls Client:
         :return: HookRuns response from REST API without the content of each hook
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = dictstrip({
             'maxResults': max_results,
@@ -3178,8 +3178,8 @@ ccradls Client:
         :return: Hook response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
-    :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+    :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/hooks/{hook_id}/runs/{run_id}')
 
@@ -3193,8 +3193,8 @@ ccradls Client:
         :return: Actions response from REST API without the content of each action
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -3210,8 +3210,8 @@ ccradls Client:
         :return: Action response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/actions/{action_id}')
 
@@ -3249,8 +3249,8 @@ ccradls Client:
         :return: Action response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
             'config': config,
@@ -3272,8 +3272,8 @@ ccradls Client:
         :return: Action response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
-    :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+    :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/actions/{action_id}')
 
@@ -3310,8 +3310,8 @@ ccradls Client:
         :return: Action response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
             'config': config,
@@ -3344,8 +3344,8 @@ ccradls Client:
         :return: ActionRuns response from REST API without the content of each action
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
- :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = dictstrip({
             'maxResults': max_results,
@@ -3364,7 +3364,7 @@ ccradls Client:
         :return: Action response from REST API
         :rtype: dict
 
-        :raises: :py:ccradls:`~cradl.InvalidCredentialsException`, :py:ccradls:`~cradl.TooManyRequestsException`,\
-    :py:ccradls:`~cradl.LimitExceededException`, :py:ccradls:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+    :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/actions/{action_id}/runs/{run_id}')
