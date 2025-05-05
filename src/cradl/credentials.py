@@ -145,7 +145,7 @@ def read_from_file(credentials_path: str = expanduser('~/.cradl/credentials.json
     client_secret = credentials.get('client_secret')
     auth_endpoint = credentials.get('auth_endpoint')
     api_endpoint = credentials.get('api_endpoint')
-    cached_profile = profile if credentials.get('use_cache', fallback=False) in ['true', 'True'] else None
+    cached_profile = profile if credentials.get('use_cache', False) else None
 
     return [client_id, client_secret, auth_endpoint, api_endpoint, cached_profile]
 
