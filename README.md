@@ -1,6 +1,6 @@
 # Python SDK for Lucidtech AI Services API
 
-![Github Actions build status](https://github.com/LucidtechAI/las-sdk-python/workflows/main/badge.svg)
+![Github Actions build status](https://github.com/LucidtechAI/cradl-sdk-python/workflows/main/badge.svg)
 
 ## Documentation
 
@@ -9,7 +9,7 @@
 ## Installation
 
 ```bash
-$ pip install lucidtech-las
+$ pip install lucidtech-cradl
 ```
 
 ## Usage
@@ -21,7 +21,7 @@ Read more about authenticating to the API [here](https://docs.cradl.ai/overview/
 
 ```python
 import json
-from las import Client
+from cradl import Client
 
 client = Client()
 models = client.list_models()['models'] # List all models available

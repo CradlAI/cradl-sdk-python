@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'las-sdk-python'
+project = 'cradl-sdk-python'
 copyright = '2020, Lucidtech'
 author = 'Lucidtech'
 

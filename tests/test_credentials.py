@@ -2,7 +2,7 @@ import json
 
 import pytest
 from functools import partial
-from las.credentials import (
+from cradl.credentials import (
     Credentials,
     MissingCredentials,
     NULL_TOKEN,
@@ -53,8 +53,8 @@ def test_guess_credentials(section, credentials_path):
     credentials_from_env = Credentials(*mock_read_from_environ())
 
     with pytest.MonkeyPatch().context() as mp:
-        mp.setattr('las.credentials.read_from_environ', mock_read_from_environ)
-        mp.setattr('las.credentials.read_from_file', partial(read_from_file, credentials_path=credentials_path))
+        mp.setattr('cradl.credentials.read_from_environ', mock_read_from_environ)
+        mp.setattr('cradl.credentials.read_from_file', partial(read_from_file, credentials_path=credentials_path))
 
         # Default to using credentials defined in the environment
         assert equal_credentials(credentials_from_env, guess_credentials())
@@ -68,7 +68,7 @@ def test_guess_credentials(section, credentials_path):
             guess_credentials(profile='missing-section')
 
         # Use credentials from file if the credentials from the environment are incomplete
-        mp.setattr('las.credentials.read_from_environ', lambda: mock_read_from_environ()[:2])
+        mp.setattr('cradl.credentials.read_from_environ', lambda: mock_read_from_environ()[:2])
         equal_credentials(guess_credentials(), credentials_from_file)
 
 

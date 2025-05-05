@@ -3,7 +3,7 @@ import random
 from datetime import datetime, timezone
 from unittest.mock import patch, ANY
 
-import las
+import cradl
 import pytest
 from cradl.client import Client
 
@@ -179,16 +179,16 @@ def execution_env():
     }
 
 
-@patch('las.Client.get_transition_execution')
-@patch('las.Client.update_transition_execution')
+@patch('cradl.Client.get_transition_execution')
+@patch('cradl.Client.update_transition_execution')
 def test_transition_handler_updated_successfully(update_transition_exc, get_transition_exc, execution_env):
     output = {'result': 'All good'}
 
-    @las.transition_handler
-    def sample_handler(las_client: Client, event: dict):
+    @cradl.transition_handler
+    def sample_handler(cradl_client: Client, event: dict):
         return output
 
-    with patch.dict(las.os.environ, values=execution_env):
+    with patch.dict(cradl.os.environ, values=execution_env):
         sample_handler()
 
     update_transition_exc.assert_called_once_with(
@@ -199,14 +199,14 @@ def test_transition_handler_updated_successfully(update_transition_exc, get_tran
     )
 
 
-@patch('las.Client.get_transition_execution')
-@patch('las.Client.update_transition_execution')
+@patch('cradl.Client.get_transition_execution')
+@patch('cradl.Client.update_transition_execution')
 def test_transition_handler_updated_on_failure(update_transition_exc, get_transition_exc, execution_env):
-    @las.transition_handler
-    def sample_handler(las_client: Client, event: dict):
+    @cradl.transition_handler
+    def sample_handler(cradl_client: Client, event: dict):
         raise RuntimeError('Some error')
 
-    with patch.dict(las.os.environ, values=execution_env):
+    with patch.dict(cradl.os.environ, values=execution_env):
         with pytest.raises(RuntimeError):
             sample_handler()
 
@@ -219,17 +219,17 @@ def test_transition_handler_updated_on_failure(update_transition_exc, get_transi
 
 
 @pytest.mark.parametrize('status', ['succeeded', 'rejected', 'failed'])
-@patch('las.Client.get_transition_execution')
-@patch('las.Client.update_transition_execution')
+@patch('cradl.Client.get_transition_execution')
+@patch('cradl.Client.update_transition_execution')
 def test_transition_handler_custom_status(update_transition_exc, get_transition_exc, execution_env, status):
     result = 'Rejected task'
     status = 'rejected'
 
-    @las.transition_handler
-    def sample_handler(las_client: Client, event: dict):
+    @cradl.transition_handler
+    def sample_handler(cradl_client: Client, event: dict):
         return result, status
 
-    with patch.dict(las.os.environ, values=execution_env):
+    with patch.dict(cradl.os.environ, values=execution_env):
         if status == 'failed':
             with pytest.raises(RuntimeError):
                 sample_handler()
