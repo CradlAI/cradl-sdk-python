@@ -2,7 +2,7 @@ import logging
 import random
 
 import pytest
-from las.client import Client
+from cradl.client import Client
 
 from . import service, util
 

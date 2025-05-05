@@ -250,7 +250,7 @@ class Client:
     ) -> Dict:
         """Creates an appClient, calls the POST /appClients endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.create_app_client(name='<name>', description='<description>')
 
@@ -305,7 +305,7 @@ class Client:
     def list_app_clients(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
         """List appClients available, calls the GET /appClients endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_app_clients()
 
@@ -350,7 +350,7 @@ class Client:
     def delete_app_client(self, app_client_id: str) -> Dict:
         """Delete the appClient with the provided appClientId, calls the DELETE /appClients/{appClientId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.delete_app_client('<app_client_id>')
 
@@ -367,7 +367,7 @@ class Client:
     def create_asset(self, content: Content, **optional_args) -> Dict:
         """Creates an asset, calls the POST /assets endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.create_asset(b'<bytes data>')
 
@@ -393,7 +393,7 @@ class Client:
     def list_assets(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
         """List assets available, calls the GET /assets endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_assets()
 
@@ -416,7 +416,7 @@ class Client:
     def get_asset(self, asset_id: str) -> Dict:
         """Get asset, calls the GET /assets/{assetId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.get_asset(asset_id='<asset id>')
 
@@ -433,7 +433,7 @@ class Client:
     def update_asset(self, asset_id: str, **optional_args) -> Dict:
         """Updates an asset, calls the PATCH /assets/{assetId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.update_asset('<asset id>', content=b'<bytes data>')
 
@@ -462,7 +462,7 @@ class Client:
     def delete_asset(self, asset_id: str) -> Dict:
         """Delete the asset with the provided asset_id, calls the DELETE /assets/{assetId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.delete_asset('<asset_id>')
 
@@ -739,7 +739,7 @@ class Client:
     ) -> Dict:
         """Creates a document, calls the POST /documents endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.create_document(b'<bytes data>', 'image/jpeg', consent_id='<consent id>')
 
@@ -796,7 +796,7 @@ class Client:
     ) -> Dict:
         """List documents available for inference, calls the GET /documents endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_documents(consent_id='<consent_id>')
 
@@ -839,7 +839,7 @@ class Client:
     ) -> Dict:
         """Delete documents with the provided consent_id, calls the DELETE /documents endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.delete_documents(consent_id='<consent id>')
 
@@ -896,7 +896,7 @@ class Client:
     ) -> Dict:
         """Get document, calls the GET /documents/{documentId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.get_document('<document id>')
 
@@ -977,7 +977,7 @@ class Client:
     def delete_document(self, document_id: str) -> Dict:
         """Delete the document with the provided document_id, calls the DELETE /documents/{documentId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.delete_document('<document_id>')
 
@@ -1003,7 +1003,7 @@ class Client:
     ) -> Dict:
         """List logs, calls the GET /logs endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_logs()
 
@@ -1040,7 +1040,7 @@ class Client:
     def get_log(self, log_id) -> Dict:
         """get log, calls the GET /logs/{logId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.get_log('<log_id>')
 
@@ -1146,7 +1146,7 @@ class Client:
     ) -> Dict:
         """List models available, calls the GET /models endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_models()
 
@@ -1262,7 +1262,7 @@ class Client:
     def delete_model(self, model_id: str) -> Dict:
         """Delete the model with the provided model_id, calls the DELETE /models/{modelId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.delete_model('<model_id>')
 
@@ -1546,7 +1546,7 @@ class Client:
     ) -> Dict:
         """Create a prediction on a document using specified model, calls the POST /predictions endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.create_prediction(document_id='<document id>', model_id='<model id>')
 
@@ -1614,7 +1614,7 @@ class Client:
     ) -> Dict:
         """List predictions available, calls the GET /predictions endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_predictions()
 
@@ -1646,7 +1646,7 @@ class Client:
     def get_prediction(self, prediction_id: str) -> Dict:
         """Get prediction, calls the GET /predictions/{predictionId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.get_prediction(prediction_id='<prediction id>')
 
@@ -1663,7 +1663,7 @@ class Client:
     def get_plan(self, plan_id: str) -> Dict:
         """Get information about a specific plan, calls the GET /plans/{plan_id} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.get_plan('<plan_id>')
 
@@ -1687,7 +1687,7 @@ class Client:
     ) -> Dict:
         """List plans available, calls the GET /plans endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_plans()
 
@@ -1714,7 +1714,7 @@ class Client:
         """Get information about a specific DeploymentEnvironment, calls the
         GET /deploymentEnvironments/{deploymentEnvironmentId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.get_deployment_environment('<deployment_environment_id>')
 
@@ -1738,7 +1738,7 @@ class Client:
     ) -> Dict:
         """List DeploymentEnvironments available, calls the GET /deploymentEnvironments endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_deployment_environments()
 
@@ -1764,7 +1764,7 @@ class Client:
     def create_secret(self, data: dict, **optional_args) -> Dict:
         """Creates an secret, calls the POST /secrets endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> data = {'username': '<username>', 'password': '<password>'}
         >>> client.create_secret(data, description='<description>')
@@ -1790,7 +1790,7 @@ class Client:
     def list_secrets(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
         """List secrets available, calls the GET /secrets endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_secrets()
 
@@ -1813,7 +1813,7 @@ class Client:
     def update_secret(self, secret_id: str, *, data: Optional[dict] = None, **optional_args) -> Dict:
         """Updates an secret, calls the PATCH /secrets/secretId endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> data = {'username': '<username>', 'password': '<password>'}
         >>> client.update_secret('<secret id>', data, description='<description>')
@@ -1839,7 +1839,7 @@ class Client:
     def delete_secret(self, secret_id: str) -> Dict:
         """Delete the secret with the provided secret_id, calls the DELETE /secrets/{secretId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.delete_secret('<secret_id>')
 
@@ -1864,7 +1864,7 @@ class Client:
 
         >>> import json
         >>> from pathlib import Path
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> # A typical docker transition
         >>> docker_params = {
@@ -1907,7 +1907,7 @@ class Client:
     ) -> Dict:
         """List transitions, calls the GET /transitions endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_transitions('<transition_type>')
 
@@ -1934,7 +1934,7 @@ class Client:
     def get_transition(self, transition_id: str) -> Dict:
         """Get the transition with the provided transition_id, calls the GET /transitions/{transitionId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.get_transition('<transition_id>')
 
@@ -1963,7 +1963,7 @@ class Client:
 
         >>> import json
         >>> from pathlib import Path
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.update_transition('<transition-id>', name='<name>', description='<description>')
 
@@ -2020,7 +2020,7 @@ class Client:
     def execute_transition(self, transition_id: str) -> Dict:
         """Start executing a manual transition, calls the POST /transitions/{transitionId}/executions endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.execute_transition('<transition_id>')
 
@@ -2039,7 +2039,7 @@ class Client:
         """Delete the transition with the provided transition_id, calls the DELETE /transitions/{transitionId} endpoint.
            Will fail if transition is in use by one or more workflows.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.delete_transition('<transition_id>')
 
@@ -2066,7 +2066,7 @@ class Client:
     ) -> Dict:
         """List executions in a transition, calls the GET /transitions/{transitionId}/executions endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_transition_executions('<transition_id>', '<status>')
 
@@ -2104,7 +2104,7 @@ class Client:
     def get_transition_execution(self, transition_id: str, execution_id: str) -> Dict:
         """Get an execution of a transition, calls the GET /transitions/{transitionId}/executions/{executionId} endpoint
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.get_transition_execution('<transition_id>', '<execution_id>')
 
@@ -2134,7 +2134,7 @@ class Client:
         """Ends the processing of the transition execution,
         calls the PATCH /transitions/{transition_id}/executions/{execution_id} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> output = {...}
         >>> client.update_transition_execution('<transition_id>', '<execution_id>', 'succeeded', output)
@@ -2174,7 +2174,7 @@ class Client:
         Must be done at minimum once every 60 seconds or the transition execution will time out,
         calls the POST /transitions/{transitionId}/executions/{executionId}/heartbeats endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.send_heartbeat('<transition_id>', '<execution_id>')
 
@@ -2194,7 +2194,7 @@ class Client:
     def create_user(self, email: str, *, app_client_id, **optional_args) -> Dict:
         """Creates a new user, calls the POST /users endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.create_user('<email>', name='John Doe')
 
@@ -2221,7 +2221,7 @@ class Client:
     def list_users(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
         """List users, calls the GET /users endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_users()
 
@@ -2244,7 +2244,7 @@ class Client:
     def get_user(self, user_id: str) -> Dict:
         """Get information about a specific user, calls the GET /users/{user_id} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.get_user('<user_id>')
 
@@ -2261,7 +2261,7 @@ class Client:
     def update_user(self, user_id: str, **optional_args) -> Dict:
         """Updates a user, calls the PATCH /users/{userId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.update_user('<user id>', name='John Doe')
 
@@ -2283,7 +2283,7 @@ class Client:
     def delete_user(self, user_id: str) -> Dict:
         """Delete the user with the provided user_id, calls the DELETE /users/{userId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.delete_user('<user_id>')
 
@@ -2310,7 +2310,7 @@ class Client:
         """Creates a new workflow, calls the POST /workflows endpoint.
         Check out Lucidtech's tutorials for more info on how to create a workflow.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> from pathlib import Path
         >>> client = Client()
         >>> specification = {'language': 'ASL', 'version': '1.0.0', 'definition': {...}}
@@ -2352,7 +2352,7 @@ class Client:
     def list_workflows(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
         """List workflows, calls the GET /workflows endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_workflows()
 
@@ -2375,7 +2375,7 @@ class Client:
     def get_workflow(self, workflow_id: str) -> Dict:
         """Get the workflow with the provided workflow_id, calls the GET /workflows/{workflowId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.get_workflow('<workflow_id>')
 
@@ -2403,7 +2403,7 @@ class Client:
 
         >>> import json
         >>> from pathlib import Path
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.update_workflow('<workflow-id>', name='<name>', description='<description>')
 
@@ -2445,7 +2445,7 @@ class Client:
     def delete_workflow(self, workflow_id: str) -> Dict:
         """Delete the workflow with the provided workflow_id, calls the DELETE /workflows/{workflowId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.delete_workflow('<workflow_id>')
 
@@ -2462,7 +2462,7 @@ class Client:
     def execute_workflow(self, workflow_id: str, content: dict) -> Dict:
         """Start a workflow execution, calls the POST /workflows/{workflowId}/executions endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> from pathlib import Path
         >>> client = Client()
         >>> content = {...}
@@ -2495,7 +2495,7 @@ class Client:
     ) -> Dict:
         """List executions in a workflow, calls the GET /workflows/{workflowId}/executions endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_workflow_executions('<workflow_id>', '<status>')
 
@@ -2539,7 +2539,7 @@ class Client:
     def get_workflow_execution(self, workflow_id: str, execution_id: str) -> Dict:
         """Get a workflow execution, calls the GET /workflows/{workflow_id}/executions/{execution_id} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.get_workflow_execution('<workflow_id>', '<execution_id>')
 
@@ -2567,7 +2567,7 @@ class Client:
         """Retry or end the processing of a workflow execution,
         calls the PATCH /workflows/{workflow_id}/executions/{execution_id} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.update_workflow_execution('<workflow_id>', '<execution_id>', '<next_transition_id>')
 
@@ -2597,7 +2597,7 @@ class Client:
         """Deletes the execution with the provided execution_id from workflow_id,
         calls the DELETE /workflows/{workflowId}/executions/{executionId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.delete_workflow_execution('<workflow_id>', '<execution_id>')
 

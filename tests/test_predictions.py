@@ -1,7 +1,7 @@
 import logging
 
 import pytest
-from las.client import Client, dictstrip
+from cradl.client import Client, dictstrip
 
 from . import service
 

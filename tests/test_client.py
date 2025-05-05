@@ -5,7 +5,7 @@ from pathlib import Path
 
 import requests_mock
 import pytest
-from las.client import InvalidCredentialsException, LimitExceededException, TooManyRequestsException, parse_content
+from cradl.client import InvalidCredentialsException, LimitExceededException, TooManyRequestsException, parse_content
 
 from . import service
 

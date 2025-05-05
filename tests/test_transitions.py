@@ -5,7 +5,7 @@ from unittest.mock import patch, ANY
 
 import las
 import pytest
-from las.client import Client
+from cradl.client import Client
 
 from . import service, util
 
