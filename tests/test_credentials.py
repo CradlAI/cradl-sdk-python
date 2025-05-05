@@ -21,14 +21,15 @@ def section():
 
 @pytest.fixture
 def credentials_path(tmp_path, section):
-    credentials_path = tmp_path / 'credentials.cfg'
-    credentials_path.write_text('\n'.join([
-        f'[{section}]',
-        'client_id = test',
-        'auth_endpoint = test',
-        'api_endpoint = test',
-        'client_secret = test',
-    ]))
+    credentials_path = tmp_path / 'credentials.json'
+    credentials_path.write_text(json.dumps({
+        section: {
+            'client_id': 'test',
+            'auth_endpoint': 'test',
+            'api_endpoint': 'test',
+            'client_secret': 'test',
+        }
+    }))
     return credentials_path
 
 
