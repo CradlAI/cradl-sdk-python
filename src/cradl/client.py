@@ -1169,20 +1169,20 @@ class Client:
         }
         return self._make_request(requests.get, '/models', params=dictstrip(params))
 
-    def get_model(self, model_id: str, *, statistics_cradlt_n_days: Optional[int] = None) -> Dict:
+    def get_model(self, model_id: str, *, statistics_last_n_days: Optional[int] = None) -> Dict:
         """Get a model, calls the GET /models/{modelId} endpoint.
 
         :param model_id: The Id of the model
         :type model_id: str
-        :param statistics_cradlt_n_days: Integer between 1 and 30
-        :type statistics_cradlt_n_days: int, optional
+        :param statistics_last_n_days: Integer between 1 and 30
+        :type statistics_last_n_days: int, optional
         :return: Model response from REST API
         :rtype: dict
 
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-        params = {'statisticsLastNDays': statistics_cradlt_n_days}
+        params = {'statisticsLastNDays': statistics_last_n_days}
         return self._make_request(requests.get, f'/models/{quote(model_id, safe="")}', params=params)
 
     def update_model(
@@ -1351,22 +1351,22 @@ class Client:
         body.update(**optional_args)
         return self._make_request(requests.post, f'/models/{model_id}/trainings', body=body)
 
-    def get_training(self, model_id: str, training_id: str, statistics_cradlt_n_days: Optional[int] = None) -> Dict:
+    def get_training(self, model_id: str, training_id: str, statistics_last_n_days: Optional[int] = None) -> Dict:
         """Get training, calls the GET /models/{modelId}/trainings/{trainingId} endpoint.
 
         :param model_id: ID of the model
         :type model_id: str
         :param training_id: ID of the training
         :type training_id: str
-        :param statistics_cradlt_n_days: Integer between 1 and 30
-        :type statistics_cradlt_n_days: int, optional
+        :param statistics_last_n_days: Integer between 1 and 30
+        :type statistics_last_n_days: int, optional
         :return: Training response from REST API
         :rtype: dict
 
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-        params = {'statisticsLastNDays': statistics_cradlt_n_days}
+        params = {'statisticsLastNDays': statistics_last_n_days}
         return self._make_request(requests.get, f'/models/{model_id}/trainings/{training_id}', params=params)
 
     def list_trainings(self, model_id, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
