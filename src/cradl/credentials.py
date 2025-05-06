@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 import time
 from os.path import exists, expanduser
@@ -9,7 +8,10 @@ from typing import List, Optional, Tuple
 import requests
 from requests.auth import HTTPBasicAuth
 
+from .log import setup_logging
 
+
+logger = setup_logging(__name__)
 NULL_TOKEN = '', 0
 
 
@@ -82,7 +84,7 @@ def read_token_from_cache(cached_profile: str, cache_path: Path):
         cache = json.loads(cache_path.read_text())
         return cache[cached_profile]['access_token'], cache[cached_profile]['expires_in']
     except Exception as e:
-        logging.warning(e)
+        logger.warning(e)
 
     return NULL_TOKEN
 

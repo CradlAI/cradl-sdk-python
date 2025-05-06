@@ -1,11 +1,12 @@
 import json
 import uuid
-from base64 import b64encode, b64decode
+from base64 import b64encode
 from pathlib import Path
 
 import requests_mock
 import pytest
-from cradl.client import InvalidCredentialsException, LimitExceededException, TooManyRequestsException, parse_content
+from cradl.response import InvalidCredentialsException, LimitExceededException, TooManyRequestsException
+from cradl.content import parse_content
 
 from . import service
 

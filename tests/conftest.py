@@ -5,7 +5,6 @@ from random import choice, randint
 import pytest
 from cradl import Client
 from requests_mock import Mocker
-from functools import partial
 
 
 @pytest.fixture(scope='session')

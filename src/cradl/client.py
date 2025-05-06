@@ -1,28 +1,23 @@
-import binascii
-import filetype
 import io
 import json
-import logging
-from base64 import b64encode, b64decode
+from base64 import b64encode
 from datetime import datetime
-from functools import singledispatch
 from pathlib import Path
-from json.decoder import JSONDecodeError
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+
+from typing import Callable, Dict, List, Optional, Sequence, Union
 from urllib.parse import urlparse, quote
 
 import requests
-from backoff import expo, on_exception  # type: ignore
 from requests.exceptions import RequestException
 
 from .credentials import Credentials, guess_credentials
+from .content import parse_content
+from .log import setup_logging
+from .backoff import exponential_backoff
+from .response import decode_response, TooManyRequestsException, EmptyRequestError
 
 
-logger = logging.getLogger(__name__)
-handler = logging.StreamHandler()
-handler.setFormatter(logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s'))
-logger.addHandler(handler)
-
+logger = setup_logging(__name__)
 Content = Union[bytes, bytearray, str, Path, io.IOBase]
 Queryparam = Union[str, List[str]]
 
@@ -44,137 +39,6 @@ def _fatal_code(e):
     return 400 <= e.response.status_code < 500
 
 
-def _decode_response(response, return_json=True):
-    try:
-        response.raise_for_status()
-        if return_json:
-            return response.json()
-        else:
-            return response.content
-    except JSONDecodeError as e:
-
-        if response.status_code == 204:
-            return {'Your request executed successfully': '204'}
-
-        logger.error('Status code {} body:\n{}'.format(response.status_code, response.text))
-        raise e
-    except Exception as e:
-        logger.error('Status code {} body:\n{}'.format(response.status_code, response.text))
-
-        if response.status_code == 400:
-            message = response.json().get('message', response.text)
-            raise BadRequest(message)
-
-        if response.status_code == 403 and 'Forbidden' in response.json().values():
-            raise InvalidCredentialsException('Credentials provided are not valid.')
-
-        if response.status_code == 404:
-            message = response.json().get('message', response.text)
-            raise NotFound(message)
-
-        if response.status_code == 429 and 'Too Many Requests' in response.json().values():
-            raise TooManyRequestsException('You have reached the limit of requests per second.')
-
-        if response.status_code == 429 and 'Limit Exceeded' in response.json().values():
-            raise LimitExceededException('You have reached the limit of total requests per month.')
-
-        raise e
-
-
-def _guess_content_type(raw):
-    guessed_type = filetype.guess(raw)
-    assert guessed_type, 'Could not determine content type of document. ' \
-                         'Please provide it by specifying content_type'
-    return guessed_type.mime
-
-
-def _parsed_content(raw, find_content_type, base_64_encode):
-    content_type = _guess_content_type(raw) if find_content_type else None
-    parsed_content = b64encode(raw).decode() if base_64_encode else raw
-    return parsed_content, content_type
-
-
-@singledispatch
-def parse_content(content, find_content_type=False, base_64_encode=True):
-    raise TypeError(
-        '\n'.join([
-            f'Could not parse content {content} of type {type(content)}',
-            'Specify content by using one of the options below:',
-            '1. Path to a file either as a string or as a Path object',
-            '2. Bytes object with b64encoding',
-            '3. Bytes object without b64encoding',
-            '4. IO Stream of either bytes or text',
-        ])
-    )
-
-
-@parse_content.register(str)
-@parse_content.register(Path)
-def _(content, find_content_type=False, base_64_encode=True):
-    raw = Path(content).read_bytes()
-    return _parsed_content(raw, find_content_type, base_64_encode)
-
-
-@parse_content.register(bytes)
-@parse_content.register(bytearray)
-def _(content, find_content_type=False, base_64_encode=True):
-    try:
-        raw = b64decode(content, validate=True)
-    except binascii.Error:
-        raw = content
-    return _parsed_content(raw, find_content_type, base_64_encode)
-
-
-@parse_content.register(io.IOBase)
-def _(content, find_content_type=False, base_64_encode=True):
-    raw = content.read()
-    raw = raw.encode() if isinstance(raw, str) else raw
-    return _parsed_content(raw, find_content_type, base_64_encode)
-
-
-class EmptyRequestError(ValueError):
-    """An EmptyRequestError is raised if the request body is empty when expected not to be empty."""
-    pass
-
-
-class ClientException(Exception):
-    """A ClientException is raised if the client refuses to
-    send request due to incorrect usage or bad request data."""
-    pass
-
-
-class InvalidCredentialsException(ClientException):
-    """An InvalidCredentialsException is raised if api key, access key id or secret access key is invalid."""
-    pass
-
-
-class TooManyRequestsException(ClientException):
-    """A TooManyRequestsException is raised if you have reached the number of requests per second limit
-    associated with your credentials."""
-    pass
-
-
-class LimitExceededException(ClientException):
-    """A LimitExceededException is raised if you have reached the limit of total requests per month
-    associated with your credentials."""
-    pass
-
-
-class BadRequest(ClientException):
-    """BadRequest is raised if you have made a request that is disqualified based on the input"""
-    pass
-
-
-class NotFound(ClientException):
-    """NotFound is raised when you try to access a resource that is not found"""
-    pass
-
-
-class FileFormatException(ClientException):
-    """A FileFormatException is raised if the file format is not supported by the api."""
-    pass
-
-
 class Client:
     """A low level client to invoke api methods from Cradl."""
     def __init__(self, credentials: Optional[Credentials] = None, profile=None):
@@ -182,8 +46,8 @@ class Client:
         :type credentials: Credentials"""
         self.credentials = credentials or guess_credentials(profile)
 
-    @on_exception(expo, TooManyRequestsException, max_tries=4)
-    @on_exception(expo, RequestException, max_tries=3, giveup=_fatal_code)
+    @exponential_backoff(TooManyRequestsException, max_tries=4)
+    @exponential_backoff(RequestException, max_tries=3, giveup=_fatal_code)
     def _make_request(
         self,
         requests_fn: Callable,
@@ -212,10 +76,10 @@ class Client:
             headers=headers,
             **kwargs,
         )
-        return _decode_response(response)
+        return decode_response(response)
 
-    @on_exception(expo, TooManyRequestsException, max_tries=4)
-    @on_exception(expo, RequestException, max_tries=3, giveup=_fatal_code)
+    @exponential_backoff(TooManyRequestsException, max_tries=4)
+    @exponential_backoff(RequestException, max_tries=3, giveup=_fatal_code)
     def _make_fileserver_request(
         self,
         requests_fn: Callable,
@@ -237,7 +101,7 @@ class Client:
             headers=headers,
             **kwargs,
         )
-        return _decode_response(response, return_json=False)
+        return decode_response(response, return_json=False)
 
     def create_app_client(
         self,
@@ -943,7 +807,7 @@ class Client:
     def update_document(
         self,
         document_id: str,
-        ground_truth: Sequence[Dict[str, Union[Optional[str], bool]]] = None, # For backwards compatibility reasons, this is placed before the *
+        ground_truth: Sequence[Dict[str, Union[Optional[str], bool]]] = None,  # For backwards compatibility reasons, this is placed before the *
         *,
         metadata: Optional[dict] = None,
         dataset_id: str = None,
