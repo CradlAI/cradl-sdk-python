@@ -9,9 +9,9 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     strategy:
-      max-parallel: 7
+      max-parallel: 4
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.10', '3.11', '3.12', '3.13']
 
     steps:
       - uses: actions/checkout@v2

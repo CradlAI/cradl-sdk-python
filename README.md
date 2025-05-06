@@ -2,10 +2,6 @@
 
 ![Github Actions build status](https://github.com/CradlAI/cradl-sdk-python/workflows/main/badge.svg)
 
-## Documentation
-
-[Link to docs](https://docs.cradl.ai/python-docs/index.html)
-
 ## Installation
 
 ```bash
@@ -46,10 +42,3 @@ $ pip install -r requirements.ci.txt
 $ make prism-start
 $ python -m pytest
 ```
-
-### Create docs
-
-```bash
-$ tox -e docs .docsout
-```
-
