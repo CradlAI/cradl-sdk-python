@@ -149,7 +149,7 @@ dependencies = [
     { name = "requests" },
 ]
 
-[package.dev-dependencies]
+[package.optional-dependencies]
 dev = [
     { name = "flake8", version = "5.0.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.8.1'" },
     { name = "flake8", version = "7.1.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.8.1' and python_full_version < '3.9'" },
@@ -166,18 +166,15 @@ dev = [
 requires-dist = [
     { name = "backoff", specifier = ">=2.2.1" },
     { name = "filetype", specifier = ">=1.2.0" },
+    { name = "flake8", marker = "extra == 'dev'", specifier = ">=5.0.4" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.14.1" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.5" },
+    { name = "pytest-env", marker = "extra == 'dev'", specifier = ">=1.1.5" },
     { name = "requests", specifier = ">=2.32.3" },
+    { name = "requests-mock", marker = "extra == 'dev'", specifier = ">=1.12.1" },
+    { name = "tox", marker = "extra == 'dev'", specifier = ">=4.25.0" },
 ]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "flake8", specifier = ">=5.0.4" },
-    { name = "mypy", specifier = ">=1.14.1" },
-    { name = "pytest", specifier = ">=8.3.5" },
-    { name = "pytest-env", specifier = ">=1.1.5" },
-    { name = "requests-mock", specifier = ">=1.12.1" },
-    { name = "tox", specifier = ">=4.25.0" },
-]
+provides-extras = ["dev"]
 
 [[package]]
 name = "distlib"
