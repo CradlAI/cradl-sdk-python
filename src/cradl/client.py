@@ -597,8 +597,8 @@ class Client:
         ground_truth: Sequence[Dict[str, str]] = None,
         metadata: Optional[dict] = None,
         name: str = None,
-        project_id: str = None,
-        project_run_id: str = None,
+        agent_id: str = None,
+        agent_run_id: str = None,
         retention_in_days: int = None,
     ) -> Dict:
         """Creates a document, calls the POST /documents endpoint.
@@ -613,10 +613,10 @@ class Client:
         :type consent_id: str, optional
         :param dataset_id: Id of the associated dataset
         :type dataset_id: str, optional
-        :param project_id: Id of the associated project
-        :type project_id: str, optional
-        :param project_run_id: Id of the associated project_run
-        :type project_run_id: str, optional
+        :param agent_id: Id of the associated agent
+        :type agent_id: str, optional
+        :param agent_run_id: Id of the associated agent_run
+        :type agent_run_id: str, optional
         :param ground_truth: List of items {'label': label, 'value': value} \
             representing the ground truth values for the document
         :type ground_truth: Sequence [ Dict [ str, Union [ str, bool ]  ] ], optional
@@ -639,8 +639,8 @@ class Client:
             'groundTruth': ground_truth,
             'metadata': metadata,
             'name': name,
-            'projectId': project_id,
-            'projectRunId': project_run_id,
+            'agentId': agent_id,
+            'agentRunId': agent_run_id,
             'retentionInDays': retention_in_days,
         }
 
@@ -1405,8 +1405,8 @@ class Client:
         preprocess_config: Optional[dict] = None,
         postprocess_config: Optional[dict] = None,
         run_async: Optional[bool] = None,
-        project_id: Optional[str] = None,
-        project_run_id: Optional[str] = None,
+        agent_id: Optional[str] = None,
+        agent_run_id: Optional[str] = None,
     ) -> Dict:
         """Create a prediction on a document using specified model, calls the POST /predictions endpoint.
 
@@ -1462,8 +1462,8 @@ class Client:
             'preprocessConfig': preprocess_config,
             'postprocessConfig': postprocess_config,
             'async': run_async,
-            'projectId': project_id,
-            'projectRunId': project_run_id,
+            'agentId': agent_id,
+            'agentRunId': agent_run_id,
         }
         return self._make_request(requests.post, '/predictions', body=dictstrip(body))
 
@@ -2543,7 +2543,7 @@ class Client:
 
     def create_validation(
         self,
-        project_id: str,
+        agent_id: str,
         *,
         config: Optional[dict] = None,
         metadata: Optional[dict] = None,
@@ -2552,8 +2552,8 @@ class Client:
 
         """Creates a validation, calls the POST /validations endpoint.
 
-        :param project_id: Id of the project
-        :type project_id: str
+        :param agent_id: Id of the agent
+        :type agent_id: str
         :param name: Name of the validation
         :type name: str, optional
         :param description: Description of the validation
@@ -2569,7 +2569,7 @@ class Client:
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
-            'projectId': project_id,
+            'agentId': agent_id,
             'config': config,
             'metadata': metadata,
             })
@@ -2582,7 +2582,7 @@ class Client:
         input: dict,
         *,
         metadata: Optional[dict] = None,
-        project_run_id: str = None,
+        agent_run_id: str = None,
         **optional_args,
     ) -> Dict:
         """Creates a validation, calls the POST /validations endpoint.
@@ -2606,7 +2606,7 @@ class Client:
         body = dictstrip({
             'input': input,
             'metadata': metadata,
-            'projectRunId': project_run_id,
+            'agentRunId': agent_run_id,
         })
         body.update(**optional_args)
         return self._make_request(requests.post, f'/validations/{validation_id}/tasks', body=body)
@@ -2682,7 +2682,7 @@ class Client:
         })
         return self._make_request(requests.get, f'/validations/{validation_id}/tasks', params=dictstrip(params))
 
-    def create_project(
+    def create_agent(
         self,
         *,
         name: Optional[str] = None,
@@ -2690,7 +2690,7 @@ class Client:
         metadata: Optional[dict] = None,
         resource_ids: Optional[list[str]] = None,
     ) -> Dict:
-        """Get project, calls the GET /projects/{projectId} endpoint.
+        """Get agent, calls the GET /agents/{agentId} endpoint.
 
         :param name: Name of the dataset
         :type name: str, optional
@@ -2700,7 +2700,7 @@ class Client:
         :type metadata: dict, optional
         :param resource_ids: Description of the dataset
         :type resource_ids: list[str], optional
-        :return: Project response from REST API
+        :return: Agent response from REST API
         :rtype: dict
 
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
@@ -2712,33 +2712,33 @@ class Client:
             'name': name,
             'resourceIds': resource_ids,
         })
-        return self._make_request(requests.post, '/projects', body=body)
+        return self._make_request(requests.post, '/agents', body=body)
 
-    def get_project(self, project_id: str) -> Dict:
-        """Get project, calls the GET /projects/{projectId} endpoint.
+    def get_agent(self, agent_id: str) -> Dict:
+        """Get agent, calls the GET /agents/{agentId} endpoint.
 
-        :param project_id: Id of the project
-        :type project_id: str
-        :return: Project response from REST API
+        :param agent_id: Id of the agent
+        :type agent_id: str
+        :return: Agent response from REST API
         :rtype: dict
 
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-        return self._make_request(requests.get, f'/projects/{project_id}')
+        return self._make_request(requests.get, f'/agents/{agent_id}')
 
-    def update_project(
+    def update_agent(
         self,
-        project_id: str,
+        agent_id: str,
         *,
         metadata: Optional[dict] = None,
         resource_ids: Optional[list[str]] = None,
         **optional_args,
     ) -> Dict:
-        """Get project, calls the GET /projects/{projectId} endpoint.
+        """Get agent, calls the GET /agents/{agentId} endpoint.
 
-        :param project_id: Id of the project
-        :type project_id: str
+        :param agent_id: Id of the agent
+        :type agent_id: str
         :param name: Name of the dataset
         :type name: str, optional
         :param description: Description of the dataset
@@ -2747,7 +2747,7 @@ class Client:
         :type metadata: dict, optional
         :param resource_ids: Description of the dataset
         :type resource_ids: list[str], optional
-        :return: Project response from REST API
+        :return: Agent response from REST API
         :rtype: dict
 
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
@@ -2758,29 +2758,29 @@ class Client:
             'resourceIds': resource_ids,
         })
         body.update(**optional_args)
-        return self._make_request(requests.patch, f'/projects/{project_id}', body=body)
+        return self._make_request(requests.patch, f'/agents/{agent_id}', body=body)
 
-    def delete_project(self, project_id: str) -> Dict:
-        """Delete project, calls the DELETE /projects/{projectId} endpoint.
+    def delete_agent(self, agent_id: str) -> Dict:
+        """Delete agent, calls the DELETE /agents/{agentId} endpoint.
 
-        :param project_id: Id of the project
-        :type project_id: str
-        :return: Project response from REST API
+        :param agent_id: Id of the agent
+        :type agent_id: str
+        :return: Agent response from REST API
         :rtype: dict
 
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-        return self._make_request(requests.delete, f'/projects/{project_id}')
+        return self._make_request(requests.delete, f'/agents/{agent_id}')
 
-    def list_projects(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
-        """List projects available, calls the GET /projects endpoint.
+    def list_agents(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
+        """List agents available, calls the GET /agents endpoint.
 
         :param max_results: Maximum number of results to be returned
         :type max_results: int, optional
         :param next_token: A unique token for each page, use the returned token to retrieve the next page.
         :type next_token: str, optional
-        :return: Projects response from REST API without the content of each project
+        :return: Agents response from REST API without the content of each agent
         :rtype: dict
 
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
@@ -2790,38 +2790,38 @@ class Client:
             'maxResults': max_results,
             'nextToken': next_token,
         }
-        return self._make_request(requests.get, '/projects', params=params)
+        return self._make_request(requests.get, '/agents', params=params)
 
-    def create_project_run(self, project_id: str) -> Dict:
-        """Get project, calls the GET /projects/{projectId} endpoint.
+    def create_agent_run(self, agent_id: str) -> Dict:
+        """Get agent, calls the GET /agents/{agentId} endpoint.
 
-        :param project_id: Id of the project
-        :type project_id: str
-        :return: Project response from REST API
+        :param agent_id: Id of the agent
+        :type agent_id: str
+        :return: Agent response from REST API
         :rtype: dict
 
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-        return self._make_request(requests.post, f'/projects/{project_id}/runs', body={})
+        return self._make_request(requests.post, f'/agents/{agent_id}/runs', body={})
 
-    def list_project_runs(
+    def list_agent_runs(
         self,
-        project_id: str,
+        agent_id: str,
         *,
         history: Optional[str] = None,
         max_results: Optional[int] = None,
         next_token: Optional[str] = None,
     ) -> Dict:
-        """List projects available, calls the GET /projects/{projectId}/runs endpoint.
+        """List agents available, calls the GET /agents/{agentId}/runs endpoint.
 
-        :param project_id: Id of the project
-        :type project_id: str
+        :param agent_id: Id of the agent
+        :type agent_id: str
         :param max_results: Maximum number of results to be returned
         :type max_results: int, optional
         :param next_token: A unique token for each page, use the returned token to retrieve the next page.
         :type next_token: str, optional
-        :return: ProjectRuns response from REST API without the content of each project
+        :return: AgentRuns response from REST API without the content of each agent
         :rtype: dict
 
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
@@ -2832,22 +2832,22 @@ class Client:
             'maxResults': max_results,
             'nextToken': next_token,
         })
-        return self._make_request(requests.get, f'/projects/{project_id}/runs', params=params)
+        return self._make_request(requests.get, f'/agents/{agent_id}/runs', params=params)
 
-    def get_project_run(self, project_id: str, run_id: str) -> Dict:
-        """Get project, calls the GET /projects/{projectId} endpoint.
+    def get_agent_run(self, agent_id: str, run_id: str) -> Dict:
+        """Get agent, calls the GET /agents/{agentId} endpoint.
 
-        :param project_id: Id of the project
-        :type project_id: str
+        :param agent_id: Id of the agent
+        :type agent_id: str
         :param run_id: Id of the run
         :type run_id: str
-        :return: Project response from REST API
+        :return: Agent response from REST API
         :rtype: dict
 
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-        return self._make_request(requests.get, f'/projects/{project_id}/runs/{run_id}')
+        return self._make_request(requests.get, f'/agents/{agent_id}/runs/{run_id}')
 
     def list_hooks(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
         """List hooks available, calls the GET /hooks endpoint.
@@ -2883,7 +2883,7 @@ class Client:
 
     def create_hook(
         self,
-        project_id: str,
+        agent_id: str,
         trigger: str,
         *,
         config: Optional[dict] = None,
@@ -2898,8 +2898,8 @@ class Client:
 
         """Get hook, calls the POST /hooks endpoint.
 
-        :param project_id: Id of the project the hook belongs to
-        :type project_id: str
+        :param agent_id: Id of the agent the hook belongs to
+        :type agent_id: str
         :param trigger: What will trigger the hook to be run
         :type trigger: str
         :param function_id: Id of the function to evaluate whether to run the false or true action
@@ -2932,7 +2932,7 @@ class Client:
             'functionId': function_id,
             'metadata': metadata,
             'name': name,
-            'projectId': project_id,
+            'agentId': agent_id,
             'trigger': trigger,
             'trueActionId': true_action_id,
         })
@@ -3081,7 +3081,7 @@ class Client:
 
     def create_action(
         self,
-        project_id: str,
+        agent_id: str,
         function_id: str,
         *,
         config: Optional[dict] = None,
@@ -3094,8 +3094,8 @@ class Client:
 
         """Get action, calls the POST /actions endpoint.
 
-        :param project_id: Id of the project the action belongs to
-        :type project_id: str
+        :param agent_id: Id of the agent the action belongs to
+        :type agent_id: str
         :param function_id: Id of the function to run
         :type function_id: str
         :param enabled: If the action is enabled or not
@@ -3123,7 +3123,7 @@ class Client:
             'functionId': function_id,
             'metadata': metadata,
             'name': name,
-            'projectId': project_id,
+            'agentId': agent_id,
             'secretId': secret_id,
         })
         return self._make_request(requests.post, '/actions', body=body)
