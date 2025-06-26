@@ -62,14 +62,17 @@ class Credentials:
             if self.cached_profile:
                 write_token_to_cache(self.cached_profile, self._token, self.cache_path)
 
+        print(access_token)
         return access_token
 
     def _get_client_credentials(self) -> Tuple[str, int]:
-        url = f'https://{self.auth_endpoint}/token?grant_type=client_credentials'
-        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        auth = HTTPBasicAuth(self.client_id, self.client_secret)
-
-        response = requests.post(url, headers=headers, auth=auth)
+        data = {
+            'client_id': self.client_id,
+            'client_secret': self.client_secret,
+            'grant_type': 'client_credentials',
+            'audience': 'https://api.cradl.ai/v1',
+        }
+        response = requests.post(self.auth_endpoint, data=data)
         response.raise_for_status()
 
         response_data = response.json()
