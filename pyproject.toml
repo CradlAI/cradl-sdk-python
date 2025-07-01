@@ -8,7 +8,7 @@ requires-python = ">=3.10"
 license = {text = "Apache 2.0"}
 dependencies = [
     "filetype>=1.2.0",
-    "requests>=2.32.3",
+    "requests (>=2.32.0)",
 ]
 
 [project.urls]
