@@ -1,28 +1,23 @@
-import binascii
-import filetype
 import io
 import json
-import logging
-from base64 import b64encode, b64decode
+from base64 import b64encode
 from datetime import datetime
-from functools import singledispatch
 from pathlib import Path
-from json.decoder import JSONDecodeError
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+
+from typing import Callable, Dict, List, Optional, Sequence, Union
 from urllib.parse import urlparse, quote
 
 import requests
-from backoff import expo, on_exception  # type: ignore
 from requests.exceptions import RequestException
 
 from .credentials import Credentials, guess_credentials
+from .content import parse_content
+from .log import setup_logging
+from .backoff import exponential_backoff
+from .response import decode_response, TooManyRequestsException, EmptyRequestError
 
 
-logger = logging.getLogger(__name__)
-handler = logging.StreamHandler()
-handler.setFormatter(logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s'))
-logger.addHandler(handler)
-
+logger = setup_logging(__name__)
 Content = Union[bytes, bytearray, str, Path, io.IOBase]
 Queryparam = Union[str, List[str]]
 
@@ -44,146 +39,15 @@ def _fatal_code(e):
     return 400 <= e.response.status_code < 500
 
 
-def _decode_response(response, return_json=True):
-    try:
-        response.raise_for_status()
-        if return_json:
-            return response.json()
-        else:
-            return response.content
-    except JSONDecodeError as e:
-
-        if response.status_code == 204:
-            return {'Your request executed successfully': '204'}
-
-        logger.error('Status code {} body:\n{}'.format(response.status_code, response.text))
-        raise e
-    except Exception as e:
-        logger.error('Status code {} body:\n{}'.format(response.status_code, response.text))
-
-        if response.status_code == 400:
-            message = response.json().get('message', response.text)
-            raise BadRequest(message)
-
-        if response.status_code == 403 and 'Forbidden' in response.json().values():
-            raise InvalidCredentialsException('Credentials provided are not valid.')
-
-        if response.status_code == 404:
-            message = response.json().get('message', response.text)
-            raise NotFound(message)
-
-        if response.status_code == 429 and 'Too Many Requests' in response.json().values():
-            raise TooManyRequestsException('You have reached the limit of requests per second.')
-
-        if response.status_code == 429 and 'Limit Exceeded' in response.json().values():
-            raise LimitExceededException('You have reached the limit of total requests per month.')
-
-        raise e
-
-
-def _guess_content_type(raw):
-    guessed_type = filetype.guess(raw)
-    assert guessed_type, 'Could not determine content type of document. ' \
-                         'Please provide it by specifying content_type'
-    return guessed_type.mime
-
-
-def _parsed_content(raw, find_content_type, base_64_encode):
-    content_type = _guess_content_type(raw) if find_content_type else None
-    parsed_content = b64encode(raw).decode() if base_64_encode else raw
-    return parsed_content, content_type
-
-
-@singledispatch
-def parse_content(content, find_content_type=False, base_64_encode=True):
-    raise TypeError(
-        '\n'.join([
-            f'Could not parse content {content} of type {type(content)}',
-            'Specify content by using one of the options below:',
-            '1. Path to a file either as a string or as a Path object',
-            '2. Bytes object with b64encoding',
-            '3. Bytes object without b64encoding',
-            '4. IO Stream of either bytes or text',
-        ])
-    )
-
-
-@parse_content.register(str)
-@parse_content.register(Path)
-def _(content, find_content_type=False, base_64_encode=True):
-    raw = Path(content).read_bytes()
-    return _parsed_content(raw, find_content_type, base_64_encode)
-
-
-@parse_content.register(bytes)
-@parse_content.register(bytearray)
-def _(content, find_content_type=False, base_64_encode=True):
-    try:
-        raw = b64decode(content, validate=True)
-    except binascii.Error:
-        raw = content
-    return _parsed_content(raw, find_content_type, base_64_encode)
-
-
-@parse_content.register(io.IOBase)
-def _(content, find_content_type=False, base_64_encode=True):
-    raw = content.read()
-    raw = raw.encode() if isinstance(raw, str) else raw
-    return _parsed_content(raw, find_content_type, base_64_encode)
-
-
-class EmptyRequestError(ValueError):
-    """An EmptyRequestError is raised if the request body is empty when expected not to be empty."""
-    pass
-
-
-class ClientException(Exception):
-    """A ClientException is raised if the client refuses to
-    send request due to incorrect usage or bad request data."""
-    pass
-
-
-class InvalidCredentialsException(ClientException):
-    """An InvalidCredentialsException is raised if api key, access key id or secret access key is invalid."""
-    pass
-
-
-class TooManyRequestsException(ClientException):
-    """A TooManyRequestsException is raised if you have reached the number of requests per second limit
-    associated with your credentials."""
-    pass
-
-
-class LimitExceededException(ClientException):
-    """A LimitExceededException is raised if you have reached the limit of total requests per month
-    associated with your credentials."""
-    pass
-
-
-class BadRequest(ClientException):
-    """BadRequest is raised if you have made a request that is disqualified based on the input"""
-    pass
-
-
-class NotFound(ClientException):
-    """NotFound is raised when you try to access a resource that is not found"""
-    pass
-
-
-class FileFormatException(ClientException):
-    """A FileFormatException is raised if the file format is not supported by the api."""
-    pass
-
-
 class Client:
-    """A low level client to invoke api methods from Lucidtech AI Services."""
+    """A low level client to invoke api methods from Cradl."""
     def __init__(self, credentials: Optional[Credentials] = None, profile=None):
-        """:param credentials: Credentials to use, instance of :py:class:`~las.Credentials`
+        """:param credentials: Credentials to use, instance of :py:class:`~cradl.Credentials`
         :type credentials: Credentials"""
         self.credentials = credentials or guess_credentials(profile)
 
-    @on_exception(expo, TooManyRequestsException, max_tries=4)
-    @on_exception(expo, RequestException, max_tries=3, giveup=_fatal_code)
+    @exponential_backoff(TooManyRequestsException, max_tries=4)
+    @exponential_backoff(RequestException, max_tries=3, giveup=_fatal_code)
     def _make_request(
         self,
         requests_fn: Callable,
@@ -212,10 +76,10 @@ class Client:
             headers=headers,
             **kwargs,
         )
-        return _decode_response(response)
+        return decode_response(response)
 
-    @on_exception(expo, TooManyRequestsException, max_tries=4)
-    @on_exception(expo, RequestException, max_tries=3, giveup=_fatal_code)
+    @exponential_backoff(TooManyRequestsException, max_tries=4)
+    @exponential_backoff(RequestException, max_tries=3, giveup=_fatal_code)
     def _make_fileserver_request(
         self,
         requests_fn: Callable,
@@ -237,7 +101,7 @@ class Client:
             headers=headers,
             **kwargs,
         )
-        return _decode_response(response, return_json=False)
+        return decode_response(response, return_json=False)
 
     def create_app_client(
         self,
@@ -250,7 +114,7 @@ class Client:
     ) -> Dict:
         """Creates an appClient, calls the POST /appClients endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.create_app_client(name='<name>', description='<description>')
 
@@ -273,8 +137,8 @@ class Client:
         :return: AppClient response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
             'logoutUrls': logout_urls,
@@ -297,15 +161,15 @@ class Client:
         :return: AppClient response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/appClients/{app_client_id}')
 
     def list_app_clients(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
         """List appClients available, calls the GET /appClients endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_app_clients()
 
@@ -316,8 +180,8 @@ class Client:
         :return: AppClients response from REST API without the content of each appClient
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -339,8 +203,8 @@ class Client:
         :return: AppClient response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         if 'role_ids' in optional_args:
             optional_args['roleIds'] = optional_args.pop('role_ids') or []
@@ -350,7 +214,7 @@ class Client:
     def delete_app_client(self, app_client_id: str) -> Dict:
         """Delete the appClient with the provided appClientId, calls the DELETE /appClients/{appClientId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.delete_app_client('<app_client_id>')
 
@@ -359,15 +223,15 @@ class Client:
         :return: AppClient response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/appClients/{app_client_id}')
 
     def create_asset(self, content: Content, **optional_args) -> Dict:
         """Creates an asset, calls the POST /assets endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.create_asset(b'<bytes data>')
 
@@ -380,8 +244,8 @@ class Client:
         :return: Asset response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         content, _ = parse_content(content)
         body = {
@@ -393,7 +257,7 @@ class Client:
     def list_assets(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
         """List assets available, calls the GET /assets endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_assets()
 
@@ -404,8 +268,8 @@ class Client:
         :return: Assets response from REST API without the content of each asset
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -416,7 +280,7 @@ class Client:
     def get_asset(self, asset_id: str) -> Dict:
         """Get asset, calls the GET /assets/{assetId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.get_asset(asset_id='<asset id>')
 
@@ -425,15 +289,15 @@ class Client:
         :return: Asset response from REST API with content
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/assets/{asset_id}')
 
     def update_asset(self, asset_id: str, **optional_args) -> Dict:
         """Updates an asset, calls the PATCH /assets/{assetId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.update_asset('<asset id>', content=b'<bytes data>')
 
@@ -448,8 +312,8 @@ class Client:
         :return: Asset response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         content = optional_args.get('content')
 
@@ -462,7 +326,7 @@ class Client:
     def delete_asset(self, asset_id: str) -> Dict:
         """Delete the asset with the provided asset_id, calls the DELETE /assets/{assetId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.delete_asset('<asset_id>')
 
@@ -471,8 +335,8 @@ class Client:
         :return: Asset response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/assets/{asset_id}')
 
@@ -486,8 +350,8 @@ class Client:
         :return: PaymentMethod response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.post, '/paymentMethods', body=optional_args)
 
@@ -501,8 +365,8 @@ class Client:
         :return: PaymentMethods response from REST API without the content of each payment method
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -518,8 +382,8 @@ class Client:
         :return: PaymentMethod response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/paymentMethods/{payment_method_id}')
 
@@ -543,8 +407,8 @@ class Client:
         :return: PaymentMethod response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
 
         body = {**optional_args}
@@ -562,8 +426,8 @@ class Client:
         :return: PaymentMethod response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
 
         return self._make_request(requests.delete, f'/paymentMethods/{payment_method_id}')
@@ -580,8 +444,8 @@ class Client:
         :return: Dataset response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({'metadata': metadata})
         body.update(**optional_args)
@@ -597,8 +461,8 @@ class Client:
         :return: Datasets response from REST API without the content of each dataset
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -614,8 +478,8 @@ class Client:
         :return: Dataset response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/datasets/{dataset_id}')
 
@@ -633,8 +497,8 @@ class Client:
         :return: Dataset response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
 
         body = dictstrip({'metadata': metadata})
@@ -651,8 +515,8 @@ class Client:
         :return: Dataset response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         if delete_documents:
             self.delete_documents(dataset_id=dataset_id, delete_all=True)
@@ -669,8 +533,8 @@ class Client:
         :return: Transformation response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
 
         body = {'operations': operations}
@@ -697,8 +561,8 @@ class Client:
         :return: Transformations response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -718,36 +582,41 @@ class Client:
         :return: Transformation response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/datasets/{dataset_id}/transformations/{transformation_id}')
 
     def create_document(
         self,
         content: Content,
-        content_type: str = None,
         *,
         consent_id: Optional[str] = None,
         dataset_id: str = None,
+        description: str = None,
         ground_truth: Sequence[Dict[str, str]] = None,
-        retention_in_days: int = None,
         metadata: Optional[dict] = None,
+        name: str = None,
+        agent_id: str = None,
+        agent_run_id: str = None,
+        retention_in_days: int = None,
     ) -> Dict:
         """Creates a document, calls the POST /documents endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.create_document(b'<bytes data>', 'image/jpeg', consent_id='<consent id>')
 
         :param content: Content to POST
         :type content: Content
-        :param content_type: MIME type for the document
-        :type content_type: str, optional
         :param consent_id: Id of the consent that marks the owner of the document
         :type consent_id: str, optional
         :param dataset_id: Id of the associated dataset
         :type dataset_id: str, optional
+        :param agent_id: Id of the associated agent
+        :type agent_id: str, optional
+        :param agent_run_id: Id of the associated agent_run
+        :type agent_run_id: str, optional
         :param ground_truth: List of items {'label': label, 'value': value} \
             representing the ground truth values for the document
         :type ground_truth: Sequence [ Dict [ str, Union [ str, bool ]  ] ], optional
@@ -758,16 +627,20 @@ class Client:
         :return: Document response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         content_bytes, _ = parse_content(content, False, False)
 
         body = {
             'consentId': consent_id,
             'datasetId': dataset_id,
+            'description': description,
             'groundTruth': ground_truth,
             'metadata': metadata,
+            'name': name,
+            'agentId': agent_id,
+            'agentRunId': agent_run_id,
             'retentionInDays': retention_in_days,
         }
 
@@ -787,7 +660,7 @@ class Client:
     ) -> Dict:
         """List documents available for inference, calls the GET /documents endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_documents(consent_id='<consent_id>')
 
@@ -806,8 +679,8 @@ class Client:
         :return: Documents response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'consentId': consent_id,
@@ -830,7 +703,7 @@ class Client:
     ) -> Dict:
         """Delete documents with the provided consent_id, calls the DELETE /documents endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.delete_documents(consent_id='<consent id>')
 
@@ -848,8 +721,8 @@ class Client:
         :return: Documents response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = dictstrip({
             'consentId': consent_id,
@@ -887,7 +760,7 @@ class Client:
     ) -> Dict:
         """Get document, calls the GET /documents/{documentId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.get_document('<document id>')
 
@@ -909,8 +782,8 @@ class Client:
         :return: Document response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         document = self._make_request(requests.get, f'/documents/{document_id}')
         query_params = dictstrip({
@@ -934,7 +807,7 @@ class Client:
     def update_document(
         self,
         document_id: str,
-        ground_truth: Sequence[Dict[str, Union[Optional[str], bool]]] = None, # For backwards compatibility reasons, this is placed before the *
+        ground_truth: Sequence[Dict[str, Union[Optional[str], bool]]] = None,  # For backwards compatibility reasons, this is placed before the *
         *,
         metadata: Optional[dict] = None,
         dataset_id: str = None,
@@ -954,8 +827,8 @@ class Client:
         :return: Document response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
             'groundTruth': ground_truth,
@@ -968,7 +841,7 @@ class Client:
     def delete_document(self, document_id: str) -> Dict:
         """Delete the document with the provided document_id, calls the DELETE /documents/{documentId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.delete_document('<document_id>')
 
@@ -977,8 +850,8 @@ class Client:
         :return: Model response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/documents/{document_id}')
 
@@ -994,7 +867,7 @@ class Client:
     ) -> Dict:
         """List logs, calls the GET /logs endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_logs()
 
@@ -1013,8 +886,8 @@ class Client:
         :return: Logs response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         url = '/logs'
         params = {
@@ -1031,7 +904,7 @@ class Client:
     def get_log(self, log_id) -> Dict:
         """get log, calls the GET /logs/{logId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.get_log('<log_id>')
 
@@ -1040,8 +913,8 @@ class Client:
         :return: Log response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/logs/{log_id}')
 
@@ -1101,13 +974,13 @@ class Client:
         :param metadata: Dictionary that can be used to store additional information
         :type metadata: dict, optional
         :param base_model: Specify which model to use as base model. Example: \
-{"organizationId": "las:organization:cradl", "modelId": "las:model:invoice"}
+{"organizationId": "cradl:organization:cradl", "modelId": "cradl:model:invoice"}
         :type base_model: dict, optional
         :return: Model response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         if base_model:
             metadata = {
@@ -1137,7 +1010,7 @@ class Client:
     ) -> Dict:
         """List models available, calls the GET /models endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_models()
 
@@ -1150,8 +1023,8 @@ class Client:
         :return: Models response from REST API without the content of each model
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -1170,8 +1043,8 @@ class Client:
         :return: Model response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {'statisticsLastNDays': statistics_last_n_days}
         return self._make_request(requests.get, f'/models/{quote(model_id, safe="")}', params=params)
@@ -1236,8 +1109,8 @@ class Client:
         :return: Model response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
             'width': width,
@@ -1253,7 +1126,7 @@ class Client:
     def delete_model(self, model_id: str) -> Dict:
         """Delete the model with the provided model_id, calls the DELETE /models/{modelId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.delete_model('<model_id>')
 
@@ -1262,8 +1135,8 @@ class Client:
         :return: Model response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/models/{model_id}')
 
@@ -1281,8 +1154,8 @@ class Client:
         :return: Data Bundle response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
 
         body = {'datasetIds': dataset_ids}
@@ -1299,8 +1172,8 @@ class Client:
         :return: DataBundle response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/models/{model_id}/dataBundles/{data_bundle_id}')
 
@@ -1330,8 +1203,8 @@ class Client:
         :return: Training response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
 
         body = dictstrip({
@@ -1354,8 +1227,8 @@ class Client:
         :return: Training response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {'statisticsLastNDays': statistics_last_n_days}
         return self._make_request(requests.get, f'/models/{model_id}/trainings/{training_id}', params=params)
@@ -1372,8 +1245,8 @@ class Client:
         :return: Trainings response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -1404,8 +1277,8 @@ class Client:
         :return: Training response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = {}
         if 'deployment_environment_id' in optional_args:
@@ -1432,8 +1305,8 @@ class Client:
         :return: Data Bundles response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -1460,8 +1333,8 @@ class Client:
         :return: Data Bundle response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.patch, f'/models/{model_id}/dataBundles/{data_bundle_id}', body=optional_args)
 
@@ -1476,8 +1349,8 @@ class Client:
         :return: Data Bundle response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/models/{model_id}/dataBundles/{data_bundle_id}')
 
@@ -1489,8 +1362,8 @@ class Client:
         :return: Organization response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/organizations/{organization_id}')
 
@@ -1514,8 +1387,8 @@ class Client:
         :return: Organization response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = {**optional_args}
         if payment_method_id:
@@ -1532,10 +1405,12 @@ class Client:
         preprocess_config: Optional[dict] = None,
         postprocess_config: Optional[dict] = None,
         run_async: Optional[bool] = None,
+        agent_id: Optional[str] = None,
+        agent_run_id: Optional[str] = None,
     ) -> Dict:
         """Create a prediction on a document using specified model, calls the POST /predictions endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.create_prediction(document_id='<document id>', model_id='<model id>')
 
@@ -1577,8 +1452,8 @@ class Client:
         :return: Prediction response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = {
             'documentId': document_id,
@@ -1587,6 +1462,8 @@ class Client:
             'preprocessConfig': preprocess_config,
             'postprocessConfig': postprocess_config,
             'async': run_async,
+            'agentId': agent_id,
+            'agentRunId': agent_run_id,
         }
         return self._make_request(requests.post, '/predictions', body=dictstrip(body))
 
@@ -1601,7 +1478,7 @@ class Client:
     ) -> Dict:
         """List predictions available, calls the GET /predictions endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_predictions()
 
@@ -1618,8 +1495,8 @@ class Client:
         :return: Predictions response from REST API without the content of each prediction
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -1633,7 +1510,7 @@ class Client:
     def get_prediction(self, prediction_id: str) -> Dict:
         """Get prediction, calls the GET /predictions/{predictionId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.get_prediction(prediction_id='<prediction id>')
 
@@ -1642,15 +1519,15 @@ class Client:
         :return: Asset response from REST API with content
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/predictions/{prediction_id}')
 
     def get_plan(self, plan_id: str) -> Dict:
         """Get information about a specific plan, calls the GET /plans/{plan_id} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.get_plan('<plan_id>')
 
@@ -1659,8 +1536,8 @@ class Client:
         :return: Plan response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
 
         return self._make_request(requests.get, f'/plans/{quote(plan_id, safe="")}')
@@ -1674,7 +1551,7 @@ class Client:
     ) -> Dict:
         """List plans available, calls the GET /plans endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_plans()
 
@@ -1687,8 +1564,8 @@ class Client:
         :return: Plans response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
-    :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+    :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -1701,7 +1578,7 @@ class Client:
         """Get information about a specific DeploymentEnvironment, calls the
         GET /deploymentEnvironments/{deploymentEnvironmentId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.get_deployment_environment('<deployment_environment_id>')
 
@@ -1710,8 +1587,8 @@ class Client:
         :return: DeploymentEnvironment response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
 
         return self._make_request(requests.get, f'/deploymentEnvironments/{quote(deployment_environment_id, safe="")}')
@@ -1725,7 +1602,7 @@ class Client:
     ) -> Dict:
         """List DeploymentEnvironments available, calls the GET /deploymentEnvironments endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_deployment_environments()
 
@@ -1738,8 +1615,8 @@ class Client:
         :return: DeploymentEnvironments response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
-    :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+    :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'owner': owner,
@@ -1751,7 +1628,7 @@ class Client:
     def create_secret(self, data: dict, **optional_args) -> Dict:
         """Creates an secret, calls the POST /secrets endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> data = {'username': '<username>', 'password': '<password>'}
         >>> client.create_secret(data, description='<description>')
@@ -1765,8 +1642,8 @@ class Client:
         :return: Secret response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = {
             'data': data,
@@ -1777,7 +1654,7 @@ class Client:
     def list_secrets(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
         """List secrets available, calls the GET /secrets endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_secrets()
 
@@ -1788,8 +1665,8 @@ class Client:
         :return: Secrets response from REST API without the username of each secret
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -1800,7 +1677,7 @@ class Client:
     def update_secret(self, secret_id: str, *, data: Optional[dict] = None, **optional_args) -> Dict:
         """Updates an secret, calls the PATCH /secrets/secretId endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> data = {'username': '<username>', 'password': '<password>'}
         >>> client.update_secret('<secret id>', data, description='<description>')
@@ -1816,8 +1693,8 @@ class Client:
         :return: Secret response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({'data': data})
         body.update(**optional_args)
@@ -1826,7 +1703,7 @@ class Client:
     def delete_secret(self, secret_id: str) -> Dict:
         """Delete the secret with the provided secret_id, calls the DELETE /secrets/{secretId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.delete_secret('<secret_id>')
 
@@ -1835,8 +1712,8 @@ class Client:
         :return: Secret response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/secrets/{secret_id}')
 
@@ -1851,7 +1728,7 @@ class Client:
 
         >>> import json
         >>> from pathlib import Path
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> # A typical docker transition
         >>> docker_params = {
@@ -1860,7 +1737,7 @@ class Client:
         >>> }
         >>> client.create_transition('docker', params=docker_params)
         >>> # A manual transition with UI
-        >>> assets = {'jsRemoteComponent': 'las:asset:<hex-uuid>', '<other asset name>': 'las:asset:<hex-uuid>'}
+        >>> assets = {'jsRemoteComponent': 'cradl:asset:<hex-uuid>', '<other asset name>': 'cradl:asset:<hex-uuid>'}
         >>> manual_params = {'assets': assets}
         >>> client.create_transition('manual', params=manual_params)
 
@@ -1875,8 +1752,8 @@ class Client:
         :return: Transition response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
             'transitionType': transition_type,
@@ -1894,7 +1771,7 @@ class Client:
     ) -> Dict:
         """List transitions, calls the GET /transitions endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_transitions('<transition_type>')
 
@@ -1907,8 +1784,8 @@ class Client:
         :return: Transitions response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         url = '/transitions'
         params = {
@@ -1921,7 +1798,7 @@ class Client:
     def get_transition(self, transition_id: str) -> Dict:
         """Get the transition with the provided transition_id, calls the GET /transitions/{transitionId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.get_transition('<transition_id>')
 
@@ -1930,8 +1807,8 @@ class Client:
         :return: Transition response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/transitions/{transition_id}')
 
@@ -1943,13 +1820,14 @@ class Client:
         cpu: Optional[int] = None,
         memory: Optional[int] = None,
         image_url: Optional[str] = None,
+        lambda_id: Optional[str] = None,
         **optional_args,
     ) -> Dict:
         """Updates a transition, calls the PATCH /transitions/{transitionId} endpoint.
 
         >>> import json
         >>> from pathlib import Path
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.update_transition('<transition-id>', name='<name>', description='<description>')
 
@@ -1972,19 +1850,22 @@ class Client:
         :type memory: int, optional
         :param image_url: Docker image url to use for a docker transition
         :type image_url: str, optional
+        :param lambda_id: Lambda ID to use for a lambda transition
+        :type lambda_id: str, optional
         :param secret_id: Secret containing a username and password if image_url points to a private docker image
         :type secret_id: str, optional
         :return: Transition response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = {}
         parameters = dictstrip({
             'assets': assets,
             'cpu': cpu,
             'imageUrl': image_url,
+            'lambdaId': lambda_id,
             'memory': memory,
         })
 
@@ -2003,7 +1884,7 @@ class Client:
     def execute_transition(self, transition_id: str) -> Dict:
         """Start executing a manual transition, calls the POST /transitions/{transitionId}/executions endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.execute_transition('<transition_id>')
 
@@ -2012,8 +1893,8 @@ class Client:
         :return: Transition execution response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         endpoint = f'/transitions/{transition_id}/executions'
         return self._make_request(requests.post, endpoint, body={})
@@ -2022,7 +1903,7 @@ class Client:
         """Delete the transition with the provided transition_id, calls the DELETE /transitions/{transitionId} endpoint.
            Will fail if transition is in use by one or more workflows.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.delete_transition('<transition_id>')
 
@@ -2031,8 +1912,8 @@ class Client:
         :return: Transition response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/transitions/{transition_id}')
 
@@ -2049,7 +1930,7 @@ class Client:
     ) -> Dict:
         """List executions in a transition, calls the GET /transitions/{transitionId}/executions endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_transition_executions('<transition_id>', '<status>')
 
@@ -2070,8 +1951,8 @@ class Client:
         :return: Transition executions responses from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         url = f'/transitions/{transition_id}/executions'
         params = {
@@ -2087,7 +1968,7 @@ class Client:
     def get_transition_execution(self, transition_id: str, execution_id: str) -> Dict:
         """Get an execution of a transition, calls the GET /transitions/{transitionId}/executions/{executionId} endpoint
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.get_transition_execution('<transition_id>', '<execution_id>')
 
@@ -2098,8 +1979,8 @@ class Client:
         :return: Transition execution responses from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         url = f'/transitions/{transition_id}/executions/{execution_id}'
         return self._make_request(requests.get, url)
@@ -2117,7 +1998,7 @@ class Client:
         """Ends the processing of the transition execution,
         calls the PATCH /transitions/{transition_id}/executions/{execution_id} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> output = {...}
         >>> client.update_transition_execution('<transition_id>', '<execution_id>', 'succeeded', output)
@@ -2139,8 +2020,8 @@ class Client:
         :return: Transition execution response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
 
         url = f'/transitions/{transition_id}/executions/{execution_id}'
@@ -2157,7 +2038,7 @@ class Client:
         Must be done at minimum once every 60 seconds or the transition execution will time out,
         calls the POST /transitions/{transitionId}/executions/{executionId}/heartbeats endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.send_heartbeat('<transition_id>', '<execution_id>')
 
@@ -2168,8 +2049,8 @@ class Client:
         :return: Empty response
         :rtype: None
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         endpoint = f'/transitions/{transition_id}/executions/{execution_id}/heartbeats'
         return self._make_request(requests.post, endpoint, body={})
@@ -2177,7 +2058,7 @@ class Client:
     def create_user(self, email: str, *, app_client_id, **optional_args) -> Dict:
         """Creates a new user, calls the POST /users endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.create_user('<email>', name='John Doe')
 
@@ -2188,8 +2069,8 @@ class Client:
         :return: User response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = {
             'email': email,
@@ -2204,7 +2085,7 @@ class Client:
     def list_users(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
         """List users, calls the GET /users endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_users()
 
@@ -2215,8 +2096,8 @@ class Client:
         :return: Users response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -2227,7 +2108,7 @@ class Client:
     def get_user(self, user_id: str) -> Dict:
         """Get information about a specific user, calls the GET /users/{user_id} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.get_user('<user_id>')
 
@@ -2236,15 +2117,15 @@ class Client:
         :return: User response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/users/{user_id}')
 
     def update_user(self, user_id: str, **optional_args) -> Dict:
         """Updates a user, calls the PATCH /users/{userId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.update_user('<user id>', name='John Doe')
 
@@ -2255,8 +2136,8 @@ class Client:
         :return: User response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         if 'role_ids' in optional_args:
             optional_args['roleIds'] = optional_args.pop('role_ids') or []
@@ -2266,7 +2147,7 @@ class Client:
     def delete_user(self, user_id: str) -> Dict:
         """Delete the user with the provided user_id, calls the DELETE /users/{userId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.delete_user('<user_id>')
 
@@ -2275,8 +2156,8 @@ class Client:
         :return: User response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/users/{user_id}')
 
@@ -2291,9 +2172,9 @@ class Client:
         **optional_args,
     ) -> Dict:
         """Creates a new workflow, calls the POST /workflows endpoint.
-        Check out Lucidtech's tutorials for more info on how to create a workflow.
+        Check out Cradl's tutorials for more info on how to create a workflow.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> from pathlib import Path
         >>> client = Client()
         >>> specification = {'language': 'ASL', 'version': '1.0.0', 'definition': {...}}
@@ -2318,8 +2199,8 @@ class Client:
         :return: Workflow response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
             'completedConfig': completed_config,
@@ -2335,7 +2216,7 @@ class Client:
     def list_workflows(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
         """List workflows, calls the GET /workflows endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_workflows()
 
@@ -2346,8 +2227,8 @@ class Client:
         :return: Workflows response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -2358,7 +2239,7 @@ class Client:
     def get_workflow(self, workflow_id: str) -> Dict:
         """Get the workflow with the provided workflow_id, calls the GET /workflows/{workflowId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.get_workflow('<workflow_id>')
 
@@ -2367,8 +2248,8 @@ class Client:
         :return: Workflow response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/workflows/{workflow_id}')
 
@@ -2386,7 +2267,7 @@ class Client:
 
         >>> import json
         >>> from pathlib import Path
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.update_workflow('<workflow-id>', name='<name>', description='<description>')
 
@@ -2409,8 +2290,8 @@ class Client:
         :return: Workflow response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
             'completedConfig': completed_config,
@@ -2428,7 +2309,7 @@ class Client:
     def delete_workflow(self, workflow_id: str) -> Dict:
         """Delete the workflow with the provided workflow_id, calls the DELETE /workflows/{workflowId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.delete_workflow('<workflow_id>')
 
@@ -2437,15 +2318,15 @@ class Client:
         :return: Workflow response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/workflows/{workflow_id}')
 
     def execute_workflow(self, workflow_id: str, content: dict) -> Dict:
         """Start a workflow execution, calls the POST /workflows/{workflowId}/executions endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> from pathlib import Path
         >>> client = Client()
         >>> content = {...}
@@ -2458,8 +2339,8 @@ class Client:
         :return: Workflow execution response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         endpoint = f'/workflows/{workflow_id}/executions'
         return self._make_request(requests.post, endpoint, body={'input': content})
@@ -2478,7 +2359,7 @@ class Client:
     ) -> Dict:
         """List executions in a workflow, calls the GET /workflows/{workflowId}/executions endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.list_workflow_executions('<workflow_id>', '<status>')
 
@@ -2501,8 +2382,8 @@ class Client:
         :return: Workflow executions responses from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         url = f'/workflows/{workflow_id}/executions'
         params = {
@@ -2522,7 +2403,7 @@ class Client:
     def get_workflow_execution(self, workflow_id: str, execution_id: str) -> Dict:
         """Get a workflow execution, calls the GET /workflows/{workflow_id}/executions/{execution_id} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.get_workflow_execution('<workflow_id>', '<execution_id>')
 
@@ -2533,8 +2414,8 @@ class Client:
         :return: Workflow execution response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         url = f'/workflows/{workflow_id}/executions/{execution_id}'
         return self._make_request(requests.get, url)
@@ -2550,7 +2431,7 @@ class Client:
         """Retry or end the processing of a workflow execution,
         calls the PATCH /workflows/{workflow_id}/executions/{execution_id} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.update_workflow_execution('<workflow_id>', '<execution_id>', '<next_transition_id>')
 
@@ -2559,15 +2440,15 @@ class Client:
         :param execution_id: Id of the execution to update
         :type execution_id: str
         :param next_transition_id: the next transition to transition into, to end the workflow-execution, \
-        use: las:transition:commons-failed
+        use: cradl:transition:commons-failed
         :type next_transition_id: str, optional
         :param status: Update the execution with this status, can only update from succeeded to completed and vice versa
         :type status: str, optional
         :return: Workflow execution response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         url = f'/workflows/{workflow_id}/executions/{execution_id}'
         body = {
@@ -2580,7 +2461,7 @@ class Client:
         """Deletes the execution with the provided execution_id from workflow_id,
         calls the DELETE /workflows/{workflowId}/executions/{executionId} endpoint.
 
-        >>> from las.client import Client
+        >>> from cradl.client import Client
         >>> client = Client()
         >>> client.delete_workflow_execution('<workflow_id>', '<execution_id>')
 
@@ -2591,8 +2472,8 @@ class Client:
         :return: WorkflowExecution response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/workflows/{workflow_id}/executions/{execution_id}')
 
@@ -2606,8 +2487,8 @@ class Client:
         :return: Roles response from REST API without the content of each role
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         params = {
             'maxResults': max_results,
@@ -2623,7 +2504,731 @@ class Client:
         :return: Role response from REST API
         :rtype: dict
 
-        :raises: :py:class:`~las.InvalidCredentialsException`, :py:class:`~las.TooManyRequestsException`,\
- :py:class:`~las.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/roles/{role_id}')
+
+    def get_validation(self, validation_id: str) -> Dict:
+        """Get validation, calls the GET /validations/{validationId} endpoint.
+
+        :param validation_id: Id of the validation
+        :type validation_id: str
+        :return: Validation response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.get, f'/validations/{validation_id}')
+
+    def list_validations(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
+        """List validations available, calls the GET /validations endpoint.
+
+        :param max_results: Maximum number of results to be returned
+        :type max_results: int, optional
+        :param next_token: A unique token for each page, use the returned token to retrieve the next page.
+        :type next_token: str, optional
+        :return: Validations response from REST API without the content of each validation
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        params = {
+            'maxResults': max_results,
+            'nextToken': next_token,
+        }
+        return self._make_request(requests.get, '/validations', params=params)
+
+    def create_validation(
+        self,
+        agent_id: str,
+        *,
+        config: Optional[dict] = None,
+        metadata: Optional[dict] = None,
+        **optional_args,
+    ) -> Dict:
+
+        """Creates a validation, calls the POST /validations endpoint.
+
+        :param agent_id: Id of the agent
+        :type agent_id: str
+        :param name: Name of the validation
+        :type name: str, optional
+        :param description: Description of the validation
+        :type description: str, optional
+        :param config: Dictionary that is used for configuration of the validation
+        :type config: dict, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
+        :return: Dataset response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body = dictstrip({
+            'agentId': agent_id,
+            'config': config,
+            'metadata': metadata,
+            })
+        body.update(**optional_args)
+        return self._make_request(requests.post, '/validations', body=body)
+
+    def create_validation_task(
+        self,
+        validation_id: str,
+        input: dict,
+        *,
+        metadata: Optional[dict] = None,
+        agent_run_id: str = None,
+        **optional_args,
+    ) -> Dict:
+        """Creates a validation, calls the POST /validations endpoint.
+
+        :param validation_id: Id of the validation
+        :type validation_id: str
+        :param input: Dictionary that can be used to store additional information
+        :type input: dict, optional
+        :param name: Name of the validation
+        :type name: str, optional
+        :param description: Description of the validation
+        :type description: str, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
+        :return: Dataset response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body = dictstrip({
+            'input': input,
+            'metadata': metadata,
+            'agentRunId': agent_run_id,
+        })
+        body.update(**optional_args)
+        return self._make_request(requests.post, f'/validations/{validation_id}/tasks', body=body)
+
+    def update_validation_task(
+        self,
+        validation_id: str,
+        validation_task_id: str,
+        output: dict,
+        status: str,
+        *,
+        metadata: Optional[dict] = None,
+        **optional_args,
+    ) -> Dict:
+        """Creates a validation, calls the POST /validations endpoint.
+
+        :param validation_id: Id of the validation
+        :type validation_id: str
+        :param validation_task_id: Id of the validation task
+        :type validation_task_id: str
+        :param output: Dictionary that can be used to store additional information
+        :type output: dict, required if status is present, otherwise optional
+        :param status: Status of the task
+        :type status: str, required if output is present, otherwise optional
+        :param name: Name of the validation
+        :type name: str, optional
+        :param description: Description of the validation
+        :type description: str, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
+        :return: Dataset response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body = dictstrip({'output': output, 'metadata': metadata, 'status': status})
+        body.update(**optional_args)
+        return self._make_request(
+            requests_fn=requests.patch,
+            path=f'/validations/{validation_id}/tasks/{validation_task_id}',
+            body=body,
+        )
+
+    def list_validation_tasks(
+        self,
+        validation_id: str,
+        *,
+        max_results: Optional[int] = None,
+        next_token: Optional[str] = None,
+        status: Optional[Queryparam] = None,
+    ) -> Dict:
+        """List validation tasks, calls the GET /validations/{validationId}/tasks endpoint.
+
+        :param validation_id: Id of the validation
+        :type validation_id: str
+        :param max_results: Maximum number of results to be returned
+        :type max_results: int, optional
+        :param next_token: A unique token for each page, use the returned token to retrieve the next page.
+        :type next_token: str, optional
+        :param status: Statuses of the validation tasks
+        :type status: Queryparam, optional
+        :return: ValidationTasks response from REST API without the content of each validation
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        params = dictstrip({
+            'maxResults': max_results,
+            'nextToken': next_token,
+            'status': status,
+        })
+        return self._make_request(requests.get, f'/validations/{validation_id}/tasks', params=dictstrip(params))
+
+    def create_agent(
+        self,
+        *,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        metadata: Optional[dict] = None,
+        resource_ids: Optional[list[str]] = None,
+    ) -> Dict:
+        """Get agent, calls the GET /agents/{agentId} endpoint.
+
+        :param name: Name of the dataset
+        :type name: str, optional
+        :param description: Description of the dataset
+        :type description: str, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
+        :param resource_ids: Description of the dataset
+        :type resource_ids: list[str], optional
+        :return: Agent response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body = dictstrip({
+            'description': description,
+            'metadata': metadata,
+            'name': name,
+            'resourceIds': resource_ids,
+        })
+        return self._make_request(requests.post, '/agents', body=body)
+
+    def get_agent(self, agent_id: str) -> Dict:
+        """Get agent, calls the GET /agents/{agentId} endpoint.
+
+        :param agent_id: Id of the agent
+        :type agent_id: str
+        :return: Agent response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.get, f'/agents/{agent_id}')
+
+    def update_agent(
+        self,
+        agent_id: str,
+        *,
+        metadata: Optional[dict] = None,
+        resource_ids: Optional[list[str]] = None,
+        **optional_args,
+    ) -> Dict:
+        """Get agent, calls the GET /agents/{agentId} endpoint.
+
+        :param agent_id: Id of the agent
+        :type agent_id: str
+        :param name: Name of the dataset
+        :type name: str, optional
+        :param description: Description of the dataset
+        :type description: str, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
+        :param resource_ids: Description of the dataset
+        :type resource_ids: list[str], optional
+        :return: Agent response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body = dictstrip({
+            'metadata': metadata,
+            'resourceIds': resource_ids,
+        })
+        body.update(**optional_args)
+        return self._make_request(requests.patch, f'/agents/{agent_id}', body=body)
+
+    def delete_agent(self, agent_id: str) -> Dict:
+        """Delete agent, calls the DELETE /agents/{agentId} endpoint.
+
+        :param agent_id: Id of the agent
+        :type agent_id: str
+        :return: Agent response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.delete, f'/agents/{agent_id}')
+
+    def list_agents(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
+        """List agents available, calls the GET /agents endpoint.
+
+        :param max_results: Maximum number of results to be returned
+        :type max_results: int, optional
+        :param next_token: A unique token for each page, use the returned token to retrieve the next page.
+        :type next_token: str, optional
+        :return: Agents response from REST API without the content of each agent
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        params = {
+            'maxResults': max_results,
+            'nextToken': next_token,
+        }
+        return self._make_request(requests.get, '/agents', params=params)
+
+    def create_agent_run(self, agent_id: str) -> Dict:
+        """Get agent, calls the GET /agents/{agentId} endpoint.
+
+        :param agent_id: Id of the agent
+        :type agent_id: str
+        :return: Agent response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.post, f'/agents/{agent_id}/runs', body={})
+
+    def list_agent_runs(
+        self,
+        agent_id: str,
+        *,
+        history: Optional[str] = None,
+        max_results: Optional[int] = None,
+        next_token: Optional[str] = None,
+    ) -> Dict:
+        """List agents available, calls the GET /agents/{agentId}/runs endpoint.
+
+        :param agent_id: Id of the agent
+        :type agent_id: str
+        :param max_results: Maximum number of results to be returned
+        :type max_results: int, optional
+        :param next_token: A unique token for each page, use the returned token to retrieve the next page.
+        :type next_token: str, optional
+        :return: AgentRuns response from REST API without the content of each agent
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        params = dictstrip({
+            'history': history,
+            'maxResults': max_results,
+            'nextToken': next_token,
+        })
+        return self._make_request(requests.get, f'/agents/{agent_id}/runs', params=params)
+
+    def get_agent_run(self, agent_id: str, run_id: str) -> Dict:
+        """Get agent, calls the GET /agents/{agentId} endpoint.
+
+        :param agent_id: Id of the agent
+        :type agent_id: str
+        :param run_id: Id of the run
+        :type run_id: str
+        :return: Agent response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.get, f'/agents/{agent_id}/runs/{run_id}')
+
+    def list_hooks(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
+        """List hooks available, calls the GET /hooks endpoint.
+
+        :param max_results: Maximum number of results to be returned
+        :type max_results: int, optional
+        :param next_token: A unique token for each page, use the returned token to retrieve the next page.
+        :type next_token: str, optional
+        :return: Hooks response from REST API without the content of each hook
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        params = {
+            'maxResults': max_results,
+            'nextToken': next_token,
+        }
+        return self._make_request(requests.get, '/hooks', params=params)
+
+    def get_hook(self, hook_id: str) -> Dict:
+        """Get hook, calls the GET /hooks/{hookId} endpoint.
+
+        :param hook_id: Id of the hook
+        :type hook_id: str
+        :return: Hook response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.get, f'/hooks/{hook_id}')
+
+    def create_hook(
+        self,
+        agent_id: str,
+        trigger: str,
+        *,
+        config: Optional[dict] = None,
+        description: Optional[str] = None,
+        enabled: Optional[bool] = None,
+        function_id: Optional[str] = None,
+        true_action_id: Optional[str] = None,
+        false_action_id: Optional[str] = None,
+        metadata: Optional[dict] = None,
+        name: Optional[str] = None,
+    ) -> Dict:
+
+        """Get hook, calls the POST /hooks endpoint.
+
+        :param agent_id: Id of the agent the hook belongs to
+        :type agent_id: str
+        :param trigger: What will trigger the hook to be run
+        :type trigger: str
+        :param function_id: Id of the function to evaluate whether to run the false or true action
+        :type function_id: str
+        :param true_action_id: Id of the action that will happen when hook run evaluates to true
+        :type true_action_id: str
+        :param enabled: If the hook is enabled or not
+        :type enabled: bool, optional
+        :param name: Name of the dataset
+        :type name: str, optional
+        :param description: Description of the dataset
+        :type description: str, optional
+        :param config: Dictionary that can be sent as input to true_action_id and false_action_id
+        :type config: dict, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
+        :param false_action_id: Id of the action that will happen when hook run evaluates to false
+        :type false_action_id: str, optional
+        :return: Hook response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body = dictstrip({
+            'config': config,
+            'description': description,
+            'enabled': enabled,
+            'falseActionId': false_action_id,
+            'functionId': function_id,
+            'metadata': metadata,
+            'name': name,
+            'agentId': agent_id,
+            'trigger': trigger,
+            'trueActionId': true_action_id,
+        })
+        return self._make_request(requests.post, '/hooks', body=body)
+
+    def delete_hook(self, hook_id: str) -> Dict:
+        """Delete hook, calls the DELETE /hooks/{hookId} endpoint.
+
+        :param hook_id: Id of the hook
+        :type hook_id: str
+        :return: Hook response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+    :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.delete, f'/hooks/{hook_id}')
+
+    def update_hook(
+        self,
+        hook_id: str,
+        *,
+        trigger: Optional[str] = None,
+        true_action_id: Optional[str] = None,
+        config: Optional[dict] = None,
+        enabled: Optional[bool] = None,
+        false_action_id: Optional[str] = None,
+        metadata: Optional[dict] = None,
+        **optional_args,
+    ) -> Dict:
+
+        """Get hook, calls the PATCH /hooks/{hookId} endpoint.
+
+        :param hook_id: Id of the hook the hook belongs to
+        :type hook_id: str
+        :param trigger: What will trigger the hook to be run
+        :type trigger: str, optional
+        :param true_action_id: Id of the action that will happen when hook run evaluates to true
+        :type true_action_id: str, optional
+        :param enabled: If the hook is enabled or not
+        :type enabled: bool, optional
+        :param name: Name of the dataset
+        :type name: str, optional
+        :param description: Description of the dataset
+        :type description: str, optional
+        :param config: Dictionary that can be sent as input to true_action_id and false_action_id
+        :type config: dict, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
+        :param false_action_id: Id of the action that will happen when hook run evaluates to false
+        :type false_action_id: str, optional
+        :return: Hook response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body = dictstrip({
+            'config': config,
+            'enabled': enabled,
+            'falseActionId': false_action_id,
+            'metadata': metadata,
+            'trigger': trigger,
+            'trueActionId': true_action_id,
+        })
+        body.update(**optional_args)
+        return self._make_request(requests.patch, f'/hooks/{hook_id}', body=body)
+
+    def list_hook_runs(
+        self,
+        hook_id: str,
+        *,
+        max_results: Optional[int] = None,
+        next_token: Optional[str] = None,
+        status: Optional[Queryparam] = None,
+    ) -> Dict:
+        """List hook runs, calls the GET /hooks/{hookId}/runs endpoint.
+
+        :param hook_id: Id of the hook
+        :type hook_id: str
+        :param max_results: Maximum number of results to be returned
+        :type max_results: int, optional
+        :param next_token: A unique token for each page, use the returned token to retrieve the next page.
+        :type next_token: str, optional
+        :param status: Statuses of the hook runs
+        :type status: Queryparam, optional
+        :return: HookRuns response from REST API without the content of each hook
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        params = dictstrip({
+            'maxResults': max_results,
+            'nextToken': next_token,
+            'status': status,
+        })
+        return self._make_request(requests.get, f'/hooks/{hook_id}/runs', params=dictstrip(params))
+
+    def get_hook_run(self, hook_id: str, run_id: str) -> Dict:
+        """Get hook, calls the GET /hooks/{hookId}/runs/{runId} endpoint.
+
+        :param hook_id: Id of the hook
+        :type hook_id: str
+        :param run_id: Id of the run
+        :type run_id: str
+        :return: Hook response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+    :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.get, f'/hooks/{hook_id}/runs/{run_id}')
+
+    def list_actions(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
+        """List actions available, calls the GET /actions endpoint.
+
+        :param max_results: Maximum number of results to be returned
+        :type max_results: int, optional
+        :param next_token: A unique token for each page, use the returned token to retrieve the next page.
+        :type next_token: str, optional
+        :return: Actions response from REST API without the content of each action
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        params = {
+            'maxResults': max_results,
+            'nextToken': next_token,
+        }
+        return self._make_request(requests.get, '/actions', params=params)
+
+    def get_action(self, action_id: str) -> Dict:
+        """Get action, calls the GET /actions/{actionId} endpoint.
+
+        :param action_id: Id of the action
+        :type action_id: str
+        :return: Action response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.get, f'/actions/{action_id}')
+
+    def create_action(
+        self,
+        agent_id: str,
+        function_id: str,
+        *,
+        config: Optional[dict] = None,
+        description: Optional[str] = None,
+        enabled: Optional[bool] = None,
+        metadata: Optional[dict] = None,
+        name: Optional[str] = None,
+        secret_id: Optional[str] = None,
+    ) -> Dict:
+
+        """Get action, calls the POST /actions endpoint.
+
+        :param agent_id: Id of the agent the action belongs to
+        :type agent_id: str
+        :param function_id: Id of the function to run
+        :type function_id: str
+        :param enabled: If the action is enabled or not
+        :type enabled: bool, optional
+        :param name: Name of the dataset
+        :type name: str, optional
+        :param description: Description of the dataset
+        :type description: str, optional
+        :param config: Dictionary that can be sent as input to true_action_id and false_action_id
+        :type config: dict, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
+        :param secret_id: Id of the secret to expand as input to functionId
+        :type secret_id: str, optional
+        :return: Action response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body = dictstrip({
+            'config': config,
+            'description': description,
+            'enabled': enabled,
+            'functionId': function_id,
+            'metadata': metadata,
+            'name': name,
+            'agentId': agent_id,
+            'secretId': secret_id,
+        })
+        return self._make_request(requests.post, '/actions', body=body)
+
+    def delete_action(self, action_id: str) -> Dict:
+        """Delete action, calls the DELETE /actions/{actionId} endpoint.
+
+        :param action_id: Id of the action
+        :type action_id: str
+        :return: Action response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+    :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.delete, f'/actions/{action_id}')
+
+    def update_action(
+        self,
+        action_id: str,
+        *,
+        config: Optional[dict] = None,
+        enabled: Optional[bool] = None,
+        function_id: Optional[str] = None,
+        metadata: Optional[dict] = None,
+        secret_id: Optional[str] = None,
+        **optional_args,
+    ) -> Dict:
+
+        """Get action, calls the PATCH /actions/{actionId} endpoint.
+
+        :param action_id: Id of the action the action belongs to
+        :type action_id: str
+        :param enabled: If the action is enabled or not
+        :type enabled: bool, optional
+        :param function_id: Id of the function to run
+        :type function_id: str
+        :param name: Name of the dataset
+        :type name: str, optional
+        :param description: Description of the dataset
+        :type description: str, optional
+        :param config: Dictionary that can be sent as input to true_action_id and false_action_id
+        :type config: dict, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
+        :param secret_id: Id of the secret to expand as input to functionId
+        :type secret_id: str
+        :return: Action response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body = dictstrip({
+            'config': config,
+            'enabled': enabled,
+            'functionId': function_id,
+            'metadata': metadata,
+            'secretId': secret_id,
+        })
+        body.update(**optional_args)
+        return self._make_request(requests.patch, f'/actions/{action_id}', body=body)
+
+    def list_action_runs(
+        self,
+        action_id: str,
+        *,
+        max_results: Optional[int] = None,
+        next_token: Optional[str] = None,
+        status: Optional[Queryparam] = None,
+    ) -> Dict:
+        """List action runs, calls the GET /actions/{actionId}/runs endpoint.
+
+        :param action_id: Id of the action
+        :type action_id: str
+        :param max_results: Maximum number of results to be returned
+        :type max_results: int, optional
+        :param next_token: A unique token for each page, use the returned token to retrieve the next page.
+        :type next_token: str, optional
+        :param status: Statuses of the action runs
+        :type status: Queryparam, optional
+        :return: ActionRuns response from REST API without the content of each action
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        params = dictstrip({
+            'maxResults': max_results,
+            'nextToken': next_token,
+            'status': status,
+        })
+        return self._make_request(requests.get, f'/actions/{action_id}/runs', params=dictstrip(params))
+
+    def get_action_run(self, action_id: str, run_id: str) -> Dict:
+        """Get action, calls the GET /actions/{actionId}/runs/{runId} endpoint.
+
+        :param action_id: Id of the action
+        :type action_id: str
+        :param run_id: Id of the run
+        :type run_id: str
+        :return: Action response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+    :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.get, f'/actions/{action_id}/runs/{run_id}')

@@ -1,9 +1,9 @@
 import random
 
 import pytest
-from las.client import Client
+from cradl.client import Client
 
-from . import service, util
+from . import service
 
 
 def test_get_role(client: Client):

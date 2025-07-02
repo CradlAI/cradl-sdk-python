@@ -3,9 +3,8 @@ from os import urandom
 from random import choice, randint
 
 import pytest
-from las import Client
+from cradl import Client
 from requests_mock import Mocker
-from functools import partial
 
 
 @pytest.fixture(scope='session')

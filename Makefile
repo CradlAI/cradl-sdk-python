@@ -1,13 +1,8 @@
-TMPSPHINXDIR = tmp_sphinx
 CID := $(shell cat /tmp/prism.cid)
 
 .PHONY: lint
 lint:
 	tox -e lint
-
-.PHONY: docs
-docs:
-	tox -e docs $(TMPSPHINXDIR)
 
 .PHONY: test
 test:

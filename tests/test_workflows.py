@@ -2,7 +2,7 @@ import random
 from datetime import datetime, timezone
 
 import pytest
-from las.client import Client
+from cradl.client import Client
 
 from . import service, util
 
@@ -56,11 +56,11 @@ def test_get_workflow(client: Client):
 @pytest.mark.parametrize('name_and_description', util.name_and_description_combinations(True))
 @pytest.mark.parametrize('status', [None, 'development', 'production'])
 def test_update_workflow(
-    client: Client, 
-    email_config, 
-    error_config, 
-    completed_config, 
-    metadata, 
+    client: Client,
+    email_config,
+    error_config,
+    completed_config,
+    metadata,
     name_and_description,
     status,
 ):

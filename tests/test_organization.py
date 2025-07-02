@@ -1,7 +1,7 @@
 import logging
 
 import pytest
-from las.client import Client
+from cradl.client import Client
 
 from . import util
 

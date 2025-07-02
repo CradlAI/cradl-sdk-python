@@ -1,0 +1,35 @@
+[project]
+name = "cradl"
+version = "0.1.0"
+description = "Python SDK for Cradl"
+authors = [{ name = "Cradl", email = "hello@cradl.ai" }]
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache 2.0"}
+dependencies = [
+    "filetype>=1.2.0",
+    "requests (>=2.31.0)",
+]
+
+[project.urls]
+Homepage = "https://github.com/CradlAI/cradl-sdk-python"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.optional-dependencies]
+dev = [
+    "flake8>=5.0.4",
+    "mypy>=1.14.1",
+    "pytest>=8.3.5",
+    "pytest-env>=1.1.5",
+    "requests-mock>=1.12.1",
+    "tox>=4.25.0",
+]

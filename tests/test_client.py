@@ -1,11 +1,12 @@
 import json
 import uuid
-from base64 import b64encode, b64decode
+from base64 import b64encode
 from pathlib import Path
 
 import requests_mock
 import pytest
-from las.client import InvalidCredentialsException, LimitExceededException, TooManyRequestsException, parse_content
+from cradl.response import InvalidCredentialsException, LimitExceededException, TooManyRequestsException
+from cradl.content import parse_content
 
 from . import service
 
@@ -26,7 +27,6 @@ def test_invalid_credentials(
     error_content,
     error_name,
     content,
-    mime_type,
     client_with_access_token,
 ):
 
@@ -41,7 +41,7 @@ def test_invalid_credentials(
         m.delete('/'.join([client.credentials.api_endpoint, 'documents']), status_code=error_code, content=error_content)
 
         with pytest.raises(error_name):
-            client.create_document(content, mime_type, consent_id=consent_id)
+            client.create_document(content, consent_id=consent_id)
 
         with pytest.raises(error_name):
             client.create_prediction(document_id, model_id)

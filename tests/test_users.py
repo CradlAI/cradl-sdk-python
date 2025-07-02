@@ -1,9 +1,7 @@
-import base64
-import pathlib
 import random
 
 import pytest
-from las.client import Client
+from cradl.client import Client
 
 from . import service
 
@@ -17,7 +15,7 @@ def assert_user(user):
 def test_create_user(client: Client):
     email = 'foo@bar.com'
     user = client.create_user(
-        email, 
+        email,
         app_client_id=service.create_app_client_id(),
         role_ids=[service.create_role_id()],
     )

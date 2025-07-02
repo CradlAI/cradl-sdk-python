@@ -17,7 +17,7 @@ jobs:
 
       - name: Version check
         run: |
-          if [ -z $(git diff origin/master HEAD -- las/__version__.py | grep version )]
+          if [ -z $(git diff origin/master HEAD -- pyproject.toml | grep version )]
           then
             echo "You should probably update version number"
             exit 1
