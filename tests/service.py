@@ -58,7 +58,6 @@ def create_organization_id():
     return f'las:organization:{uuid4().hex}'
 
 
-
 def create_secret_id():
     return f'las:secret:{uuid4().hex}'
 
