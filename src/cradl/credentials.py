@@ -65,13 +65,20 @@ class Credentials:
         return access_token
 
     def _get_client_credentials(self) -> Tuple[str, int]:
-        data = {
-            'client_id': self.client_id,
-            'client_secret': self.client_secret,
-            'grant_type': 'client_credentials',
-            'audience': 'https://api.cradl.ai/v1',
-        }
-        response = requests.post(self.auth_endpoint, data=data)
+        if 'kinde' in self.auth_endpoint:
+            data = {
+                'client_id': self.client_id,
+                'client_secret': self.client_secret,
+                'grant_type': 'client_credentials',
+                'audience': 'https://api.cradl.ai/v1',
+            }
+            response = requests.post(self.auth_endpoint, data=data)
+        else:
+            url = f'https://{self.auth_endpoint}/token?grant_type=client_credentials'
+            headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+            auth = HTTPBasicAuth(self.client_id, self.client_secret)
+            response = requests.post(url, headers=headers, auth=auth)
+
         response.raise_for_status()
 
         response_data = response.json()
