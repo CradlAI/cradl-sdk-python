@@ -65,7 +65,7 @@ class Credentials:
         return access_token
 
     def _get_client_credentials(self) -> Tuple[str, int]:
-        if 'kinde' in self.auth_endpoint:
+        if 'kinde.com' in self.auth_endpoint:
             data = {
                 'client_id': self.client_id,
                 'client_secret': self.client_secret,
