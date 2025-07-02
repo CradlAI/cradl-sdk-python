@@ -62,7 +62,6 @@ class Credentials:
             if self.cached_profile:
                 write_token_to_cache(self.cached_profile, self._token, self.cache_path)
 
-        print(access_token)
         return access_token
 
     def _get_client_credentials(self) -> Tuple[str, int]:
