@@ -101,7 +101,7 @@ wheels = [
 
 [[package]]
 name = "cradl"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "filetype" },
@@ -125,7 +125,7 @@ requires-dist = [
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.14.1" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.5" },
     { name = "pytest-env", marker = "extra == 'dev'", specifier = ">=1.1.5" },
-    { name = "requests", specifier = ">=2.32.3" },
+    { name = "requests", specifier = ">=2.31.0" },
     { name = "requests-mock", marker = "extra == 'dev'", specifier = ">=1.12.1" },
     { name = "tox", marker = "extra == 'dev'", specifier = ">=4.25.0" },
 ]
