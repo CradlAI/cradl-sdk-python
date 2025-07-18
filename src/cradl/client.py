@@ -597,7 +597,6 @@ class Client:
         ground_truth: Sequence[Dict[str, str]] = None,
         metadata: Optional[dict] = None,
         name: str = None,
-        agent_id: str = None,
         agent_run_id: str = None,
         retention_in_days: int = None,
     ) -> Dict:
@@ -613,8 +612,6 @@ class Client:
         :type consent_id: str, optional
         :param dataset_id: Id of the associated dataset
         :type dataset_id: str, optional
-        :param agent_id: Id of the associated agent
-        :type agent_id: str, optional
         :param agent_run_id: Id of the associated agent_run
         :type agent_run_id: str, optional
         :param ground_truth: List of items {'label': label, 'value': value} \
@@ -639,7 +636,6 @@ class Client:
             'groundTruth': ground_truth,
             'metadata': metadata,
             'name': name,
-            'agentId': agent_id,
             'agentRunId': agent_run_id,
             'retentionInDays': retention_in_days,
         }
@@ -1405,7 +1401,6 @@ class Client:
         preprocess_config: Optional[dict] = None,
         postprocess_config: Optional[dict] = None,
         run_async: Optional[bool] = None,
-        agent_id: Optional[str] = None,
         agent_run_id: Optional[str] = None,
     ) -> Dict:
         """Create a prediction on a document using specified model, calls the POST /predictions endpoint.
@@ -1462,7 +1457,6 @@ class Client:
             'preprocessConfig': preprocess_config,
             'postprocessConfig': postprocess_config,
             'async': run_async,
-            'agentId': agent_id,
             'agentRunId': agent_run_id,
         }
         return self._make_request(requests.post, '/predictions', body=dictstrip(body))
@@ -2543,7 +2537,6 @@ class Client:
 
     def create_validation(
         self,
-        agent_id: str,
         *,
         config: Optional[dict] = None,
         metadata: Optional[dict] = None,
@@ -2552,8 +2545,6 @@ class Client:
 
         """Creates a validation, calls the POST /validations endpoint.
 
-        :param agent_id: Id of the agent
-        :type agent_id: str
         :param name: Name of the validation
         :type name: str, optional
         :param description: Description of the validation
@@ -2569,10 +2560,9 @@ class Client:
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
-            'agentId': agent_id,
             'config': config,
             'metadata': metadata,
-            })
+        })
         body.update(**optional_args)
         return self._make_request(requests.post, '/validations', body=body)
 
@@ -2690,7 +2680,7 @@ class Client:
         metadata: Optional[dict] = None,
         resource_ids: Optional[list[str]] = None,
     ) -> Dict:
-        """Get agent, calls the GET /agents/{agentId} endpoint.
+        """Get agent, calls the POST /agents endpoint.
 
         :param name: Name of the dataset
         :type name: str, optional
@@ -2735,7 +2725,7 @@ class Client:
         resource_ids: Optional[list[str]] = None,
         **optional_args,
     ) -> Dict:
-        """Get agent, calls the GET /agents/{agentId} endpoint.
+        """Get agent, calls the PATCH /agents/{agentId} endpoint.
 
         :param agent_id: Id of the agent
         :type agent_id: str
@@ -2793,7 +2783,7 @@ class Client:
         return self._make_request(requests.get, '/agents', params=params)
 
     def create_agent_run(self, agent_id: str) -> Dict:
-        """Get agent, calls the GET /agents/{agentId} endpoint.
+        """Get agent, calls the POST /agents/{agentId}/runs endpoint.
 
         :param agent_id: Id of the agent
         :type agent_id: str
@@ -2835,7 +2825,7 @@ class Client:
         return self._make_request(requests.get, f'/agents/{agent_id}/runs', params=params)
 
     def get_agent_run(self, agent_id: str, run_id: str) -> Dict:
-        """Get agent, calls the GET /agents/{agentId} endpoint.
+        """Get agent, calls the GET /agents/{agentId}/runs/{runId} endpoint.
 
         :param agent_id: Id of the agent
         :type agent_id: str
@@ -2883,7 +2873,6 @@ class Client:
 
     def create_hook(
         self,
-        agent_id: str,
         trigger: str,
         *,
         config: Optional[dict] = None,
@@ -2898,8 +2887,6 @@ class Client:
 
         """Get hook, calls the POST /hooks endpoint.
 
-        :param agent_id: Id of the agent the hook belongs to
-        :type agent_id: str
         :param trigger: What will trigger the hook to be run
         :type trigger: str
         :param function_id: Id of the function to evaluate whether to run the false or true action
@@ -2932,7 +2919,6 @@ class Client:
             'functionId': function_id,
             'metadata': metadata,
             'name': name,
-            'agentId': agent_id,
             'trigger': trigger,
             'trueActionId': true_action_id,
         })
@@ -3081,7 +3067,6 @@ class Client:
 
     def create_action(
         self,
-        agent_id: str,
         function_id: str,
         *,
         config: Optional[dict] = None,
@@ -3094,8 +3079,6 @@ class Client:
 
         """Get action, calls the POST /actions endpoint.
 
-        :param agent_id: Id of the agent the action belongs to
-        :type agent_id: str
         :param function_id: Id of the function to run
         :type function_id: str
         :param enabled: If the action is enabled or not
@@ -3123,7 +3106,6 @@ class Client:
             'functionId': function_id,
             'metadata': metadata,
             'name': name,
-            'agentId': agent_id,
             'secretId': secret_id,
         })
         return self._make_request(requests.post, '/actions', body=body)
