@@ -2782,7 +2782,7 @@ class Client:
         }
         return self._make_request(requests.get, '/agents', params=params)
 
-    def create_agent_run(self, agent_id: str, variables: dict = None) -> Dict:
+    def create_agent_run(self, agent_id: str, *, variables: dict = None) -> Dict:
         """Get agent, calls the POST /agents/{agentId}/runs endpoint.
 
         :param agent_id: Id of the agent
