@@ -8,8 +8,6 @@ from pathlib import Path
 
 def _guess_content_type(raw):
     guessed_type = filetype.guess(raw)
-    assert guessed_type, 'Could not determine content type of document. ' \
-                         'Please provide it by specifying content_type'
     return guessed_type.mime
 
 

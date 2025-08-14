@@ -6,16 +6,21 @@ from . import service, util
 pytestmark = pytest.mark.integration
 
 
-@pytest.mark.parametrize('metadata', [util.metadata(), None])
+@pytest.mark.parametrize(('metadata', 'image'), [
+    (util.metadata(), True),
+    (None, False),
+])
 def test_create_document(
     monkeypatch,
     static_client: Client,
     content,
+    image,
     metadata,
+    pdf_content,
 ):
     consent_id = service.create_consent_id()
     post_documents_response = static_client.create_document(
-        content,
+        content if image else pdf_content,
         consent_id=consent_id,
         metadata=metadata,
     )

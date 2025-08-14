@@ -641,7 +641,12 @@ class Client:
         }
 
         document = self._make_request(requests.post, '/documents', body=dictstrip(body))
-        self._make_fileserver_request(requests.put, document['fileUrl'], content=content_bytes)
+        try:
+            self._make_fileserver_request(requests.put, document['fileUrl'], content=content_bytes)
+        except Exception as e:
+            self.delete_document(document['documentId'])
+            raise e
+
         return document
 
     def list_documents(
