@@ -2782,7 +2782,7 @@ class Client:
         }
         return self._make_request(requests.get, '/agents', params=params)
 
-    def create_agent_run(self, agent_id: str) -> Dict:
+    def create_agent_run(self, agent_id: str, *, variables: dict = None) -> Dict:
         """Get agent, calls the POST /agents/{agentId}/runs endpoint.
 
         :param agent_id: Id of the agent
@@ -2793,7 +2793,11 @@ class Client:
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-        return self._make_request(requests.post, f'/agents/{agent_id}/runs', body={})
+        if variables:
+            body = {'variables': variables}
+        else:
+            body = {}
+        return self._make_request(requests.post, f'/agents/{agent_id}/runs', body=body)
 
     def list_agent_runs(
         self,
