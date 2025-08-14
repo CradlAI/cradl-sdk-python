@@ -56,3 +56,8 @@ def content():
     Yields a random JPEG bytestring with a length 2E4
     """
     yield b'\xFF\xD8\xFF\xEE' + urandom(int(2E4))
+
+
+@pytest.fixture(scope='session')
+def pdf_content():
+    yield 'HTTP/1.0 200 OK%PDF-1.4 %½¾¼µ %%EOF'.encode()
