@@ -2847,7 +2847,7 @@ class Client:
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         agent_run = self._make_request(requests.get, f'/agents/{agent_id}/runs/{run_id}')
-        if get_variables:
+        if get_variables and agent_run.get('variablesFileUrl'):
             agent_run['variables'] = json.loads(self._make_fileserver_request(
                 requests_fn=requests.get,
                 file_url=agent_run['variablesFileUrl'],
