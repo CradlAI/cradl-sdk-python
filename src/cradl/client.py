@@ -2833,7 +2833,7 @@ class Client:
         })
         return self._make_request(requests.get, f'/agents/{agent_id}/runs', params=params)
 
-    def get_agent_run(self, agent_id: str, run_id: str) -> Dict:
+    def get_agent_run(self, agent_id: str, run_id: str, *, get_variables: bool = False) -> Dict:
         """Get agent, calls the GET /agents/{agentId}/runs/{runId} endpoint.
 
         :param agent_id: Id of the agent
@@ -2846,7 +2846,14 @@ class Client:
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-        return self._make_request(requests.get, f'/agents/{agent_id}/runs/{run_id}')
+        agent_run = self._make_request(requests.get, f'/agents/{agent_id}/runs/{run_id}')
+        if get_variables:
+            agent_run['variables'] = json.loads(self._make_fileserver_request(
+                requests_fn=requests.get,
+                file_url=agent_run['variablesFileUrl'],
+                query_params={},
+            ).decode())
+        return agent_run
 
     def list_hooks(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
         """List hooks available, calls the GET /hooks endpoint.
