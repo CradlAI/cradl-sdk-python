@@ -86,7 +86,7 @@ class Client:
         file_url: str,
         content: Optional[bytes] = None,
         query_params: Optional[dict] = None,
-    ) -> Dict:
+    ) -> bytes:
         if not content and requests_fn == requests.put:
             raise EmptyRequestError
 
