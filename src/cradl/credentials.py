@@ -65,7 +65,7 @@ class Credentials:
         return access_token
 
     def _get_client_credentials(self) -> Tuple[str, int]:
-        if any(endpoint in self.auth_endpoint for endpoint in ['auth.cradl.ai', 'kinde.com']):
+        if any(endpoint in self.auth_endpoint for endpoint in ['auth.lucidtech.io', 'auth.cradl.ai', 'kinde.com']):
             data = {
                 'client_id': self.client_id,
                 'client_secret': self.client_secret,
