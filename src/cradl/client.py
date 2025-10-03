@@ -36,7 +36,9 @@ def dictstrip(d):
 
 
 def _fatal_code(e):
-    return 400 <= e.response.status_code < 500
+    if hasattr(e, 'response'):
+        return 400 <= e.response.status_code < 500
+    raise e
 
 
 class Client:
