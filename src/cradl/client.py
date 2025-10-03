@@ -35,8 +35,8 @@ def dictstrip(d):
     return {k: v for k, v in d.items() if v is not None}
 
 
-def _fatal_code(e):
-    if hasattr(e, 'response'):
+def _fatal_code(e: RequestException):
+    if getattr(e, 'response') and isinstance(e.response.status_code, int):
         return 400 <= e.response.status_code < 500
     raise e
 
