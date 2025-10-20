@@ -2509,7 +2509,7 @@ class Client:
         return self._make_request(requests.post, '/roles', body=body)
 
     def update_role(self, role_id: str, *, permissions: Optional[List[Dict]] = None, **optional_args) -> Dict:
-        """Updates a role, calls the PATCH /roles/roleId endpoint.
+        """Updates a role, calls the PATCH /roles/{roleId} endpoint.
 
         >>> from cradl.client import Client
         >>> client = Client()
