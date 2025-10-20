@@ -1375,6 +1375,7 @@ class Client:
         organization_id: str,
         *,
         payment_method_id: str = None,
+        document_retention_in_days: int = None,
         **optional_args,
     ) -> Dict:
         """Updates an organization, calls the PATCH /organizations/{organizationId} endpoint.
@@ -1396,6 +1397,9 @@ class Client:
         body = {**optional_args}
         if payment_method_id:
             body['paymentMethodId'] = payment_method_id
+
+        if document_retention_in_days:
+            body['documentRetentionInDays'] = document_retention_in_days
 
         return self._make_request(requests.patch, f'/organizations/{organization_id}', body=body)
 
@@ -1627,7 +1631,7 @@ class Client:
         return self._make_request(requests.get, '/deploymentEnvironments', params=dictstrip(params))
 
     def create_secret(self, data: dict, **optional_args) -> Dict:
-        """Creates an secret, calls the POST /secrets endpoint.
+        """Creates a secret, calls the POST /secrets endpoint.
 
         >>> from cradl.client import Client
         >>> client = Client()
@@ -1676,7 +1680,7 @@ class Client:
         return self._make_request(requests.get, '/secrets', params=params)
 
     def update_secret(self, secret_id: str, *, data: Optional[dict] = None, **optional_args) -> Dict:
-        """Updates an secret, calls the PATCH /secrets/secretId endpoint.
+        """Updates a secret, calls the PATCH /secrets/secretId endpoint.
 
         >>> from cradl.client import Client
         >>> client = Client()
@@ -2478,6 +2482,59 @@ class Client:
         """
         return self._make_request(requests.delete, f'/workflows/{workflow_id}/executions/{execution_id}')
 
+    def create_role(self, permissions: List[Dict], **optional_args) -> Dict:
+        """Creates a role, calls the POST /roles endpoint.
+
+        >>> from cradl.client import Client
+        >>> client = Client()
+        >>> permissions = [{'resource': '<resource-identifier>', 'action': 'read|write', 'effect': 'allow|deny'}]
+        >>> client.create_role(permissions, description='<description>')
+
+        :param permissions: List of permissions the role will have
+        :type permissions: list
+        :param name: Name of the role
+        :type name: str, optional
+        :param description: Description of the role
+        :type description: str, optional
+        :return: Role response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body = {
+            'permissions': permissions,
+            **optional_args,
+        }
+        return self._make_request(requests.post, '/roles', body=body)
+
+    def update_role(self, role_id: str, *, permissions: Optional[List[Dict]] = None, **optional_args) -> Dict:
+        """Updates a role, calls the PATCH /roles/{roleId} endpoint.
+
+        >>> from cradl.client import Client
+        >>> client = Client()
+        >>> permissions = [{'resource': '<resource-identifier>', 'action': 'read|write', 'effect': 'allow|deny'}]
+        >>> client.update_role('<role id>', permissions=permissions, description='<description>')
+
+        :param role_id: Id of the role
+        :type role_id: str
+        :param permissions: List of permissions the role will have
+        :type permissions: list
+        :param name: Name of the role
+        :type name: str, optional
+        :param description: Description of the role
+        :type description: str, optional
+        :return: Role response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body = dictstrip({'permissions': permissions})
+        body.update(**optional_args)
+        return self._make_request(requests.patch, f'/roles/{role_id}', body=body)
+
+
     def list_roles(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
         """List roles available, calls the GET /roles endpoint.
 
@@ -2509,6 +2566,23 @@ class Client:
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/roles/{role_id}')
+
+    def delete_role(self, role_id: str) -> Dict:
+        """Delete the role with the provided role_id, calls the DELETE /roles/{roleId} endpoint.
+
+        >>> from cradl.client import Client
+        >>> client = Client()
+        >>> client.delete_role('<role_id>')
+
+        :param role_id: Id of the role
+        :type role_id: str
+        :return: Role response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.delete, f'/roles/{role_id}')
 
     def get_validation(self, validation_id: str) -> Dict:
         """Get validation, calls the GET /validations/{validationId} endpoint.

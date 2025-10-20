@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 0.4.6 - 2025-10-17
+
+- Add documentRetentionInDays to update_organization
+- Add methods create_role, update_role and delete_role
+
 ## Version 0.4.2 - 2025-08-14
 
 - Do not discard documents based on their content type
