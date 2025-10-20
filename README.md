@@ -11,7 +11,7 @@ $ pip install cradl
 ## Usage
 
 Sign up for free [here](https://app.cradl.ai/signup) and download API credentials to use this SDK.
-Read more about authenticating to the API [here](https://docs.cradl.ai/overview/authentication)
+Read more about authenticating to the API [here](https://docs.cradl.ai/api-reference/introduction#authentication)
 
 ### Quick start
 
