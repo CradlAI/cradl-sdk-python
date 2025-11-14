@@ -3315,7 +3315,7 @@ class Client:
         input: Optional[dict] = None,
         metadata: Optional[dict] = None,
     ) -> Dict:
-        """Create action run, calls the POST /actions/{actionId}/runs/ endpoint.
+        """Create action run, calls the POST /actions/{actionId}/runs endpoint.
 
         :param action_id: Id of the action
         :type action_id: str
