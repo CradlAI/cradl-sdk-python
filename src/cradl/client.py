@@ -3310,8 +3310,8 @@ class Client:
     def create_action_run(
         self,
         action_id: str,
-        run_id: str,
         *,
+        agent_run_id: str = None,
         input: Optional[dict] = None,
         metadata: Optional[dict] = None,
     ) -> Dict:
@@ -3319,8 +3319,8 @@ class Client:
 
         :param action_id: Id of the action
         :type action_id: str
-        :param run_id: Id of the run
-        :type run_id: str
+        :param agent_run_id: Id of an agent run to associate with the action run
+        :type agent_run_id: str
         :param input: Dictionary with input to the run
         :type input: dict, optional
         :param metadata: Dictionary that can be used to store additional information
@@ -3334,6 +3334,7 @@ class Client:
         body = dictstrip({
             'input': input,
             'metadata': metadata,
+            'agentRunId': agent_run_id,
         })
         return self._make_request(requests.post, f'/actions/{action_id}/runs', body=body)
 
