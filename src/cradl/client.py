@@ -3332,9 +3332,9 @@ class Client:
     :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
+            'agentRunId': agent_run_id,
             'input': input,
             'metadata': metadata,
-            'agentRunId': agent_run_id,
         })
         return self._make_request(requests.post, f'/actions/{action_id}/runs', body=body)
 
