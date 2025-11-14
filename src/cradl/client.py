@@ -3335,5 +3335,5 @@ class Client:
             'input': input,
             'metadata': metadata,
         })
-        return self._make_request(requests.post, f'/actions/{action_id}/runs/{run_id}', body=body)
+        return self._make_request(requests.post, f'/actions/{action_id}/runs', body=body)
 
