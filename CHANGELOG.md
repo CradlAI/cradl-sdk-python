@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 0.4.6 - 2025-11-14
+## Version 0.4.7 - 2025-11-14
 
 - Add create_action_run method
 

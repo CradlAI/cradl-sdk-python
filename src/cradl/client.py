@@ -3311,11 +3311,11 @@ class Client:
         self,
         action_id: str,
         *,
-        agent_run_id: str = None,
+        agent_run_id: Optional[str] = None,
         input: Optional[dict] = None,
         metadata: Optional[dict] = None,
     ) -> Dict:
-        """Create action run, calls the POST /actions/{actionId}/runs/{runId} endpoint.
+        """Create action run, calls the POST /actions/{actionId}/runs/ endpoint.
 
         :param action_id: Id of the action
         :type action_id: str
