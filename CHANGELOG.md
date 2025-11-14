@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.4.7 - 2025-11-14
+
+- Add create_action_run method
+
 ## Version 0.4.6 - 2025-10-17
 
 - Add documentRetentionInDays to update_organization
