@@ -3169,7 +3169,7 @@ class Client:
         secret_id: Optional[str] = None,
     ) -> Dict:
 
-        """Get action, calls the POST /actions endpoint.
+        """Create action, calls the POST /actions endpoint.
 
         :param function_id: Id of the function to run
         :type function_id: str
@@ -3293,7 +3293,7 @@ class Client:
         return self._make_request(requests.get, f'/actions/{action_id}/runs', params=dictstrip(params))
 
     def get_action_run(self, action_id: str, run_id: str) -> Dict:
-        """Get action, calls the GET /actions/{actionId}/runs/{runId} endpoint.
+        """Get action run, calls the GET /actions/{actionId}/runs/{runId} endpoint.
 
         :param action_id: Id of the action
         :type action_id: str
@@ -3306,3 +3306,34 @@ class Client:
     :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/actions/{action_id}/runs/{run_id}')
+
+    def create_action_run(
+        self,
+        action_id: str,
+        run_id: str,
+        *,
+        input: Optional[dict] = None,
+        metadata: Optional[dict] = None,
+    ) -> Dict:
+        """Create action run, calls the POST /actions/{actionId}/runs/{runId} endpoint.
+
+        :param action_id: Id of the action
+        :type action_id: str
+        :param run_id: Id of the run
+        :type run_id: str
+        :param input: Dictionary with input to the run
+        :type input: dict, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
+        :return: Action response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+    :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body = dictstrip({
+            'input': input,
+            'metadata': metadata,
+        })
+        return self._make_request(requests.post, f'/actions/{action_id}/runs/{run_id}', body=body)
+
