@@ -3310,19 +3310,19 @@ class Client:
     def create_action_run(
         self,
         action_id: str,
+        input: dict,
         *,
         agent_run_id: Optional[str] = None,
-        input: Optional[dict] = None,
         metadata: Optional[dict] = None,
     ) -> Dict:
         """Create action run, calls the POST /actions/{actionId}/runs endpoint.
 
         :param action_id: Id of the action
         :type action_id: str
-        :param agent_run_id: Id of an agent run to associate with the action run
-        :type agent_run_id: str
         :param input: Dictionary with input to the run
-        :type input: dict, optional
+        :type input: dict
+        :param agent_run_id: Id of an agent run to associate with the action run
+        :type agent_run_id: str, optional
         :param metadata: Dictionary that can be used to store additional information
         :type metadata: dict, optional
         :return: Action response from REST API
@@ -3333,7 +3333,7 @@ class Client:
         """
         body = dictstrip({
             'agentRunId': agent_run_id,
-            'input': input,
+            'input': input or {},
             'metadata': metadata,
         })
         return self._make_request(requests.post, f'/actions/{action_id}/runs', body=body)
