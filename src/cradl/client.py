@@ -3333,7 +3333,7 @@ class Client:
         """
         body = dictstrip({
             'agentRunId': agent_run_id,
-            'input': input or {},
+            'input': input,
             'metadata': metadata,
         })
         return self._make_request(requests.post, f'/actions/{action_id}/runs', body=body)
