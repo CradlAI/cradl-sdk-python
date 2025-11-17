@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.4.8 - 2025-11-17
+
+- Add delete_validation method
+
 ## Version 0.4.7 - 2025-11-14
 
 - Add create_action_run method
