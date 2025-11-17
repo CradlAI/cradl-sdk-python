@@ -2647,6 +2647,23 @@ class Client:
         body.update(**optional_args)
         return self._make_request(requests.post, '/validations', body=body)
 
+    def delete_validation(self, validation_id: str) -> Dict:
+        """Delete the validation with the provided validation_id, calls the DELETE /validations/{validation_id} endpoint.
+
+        >>> from cradl.client import Client
+        >>> client = Client()
+        >>> client.delete_validation('<validation_id>')
+
+        :param validation_id: Id of the validation
+        :type validation_id: str
+        :return: Validation response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.delete, f'/validations/{validation_id}')
+
     def create_validation_task(
         self,
         validation_id: str,
