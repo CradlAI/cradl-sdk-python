@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.4.9 - 2025-11-18
+
+- Add delete_agent_run method
+
 ## Version 0.4.8 - 2025-11-17
 
 - Add delete_validation method
