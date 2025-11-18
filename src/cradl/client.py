@@ -2881,7 +2881,7 @@ class Client:
         return self._make_request(requests.get, '/agents', params=params)
 
     def create_agent_run(self, agent_id: str, *, variables: dict = None) -> Dict:
-        """Get agent, calls the POST /agents/{agentId}/runs endpoint.
+        """Create agent run, calls the POST /agents/{agentId}/runs endpoint.
 
         :param agent_id: Id of the agent
         :type agent_id: str
@@ -2905,7 +2905,7 @@ class Client:
         max_results: Optional[int] = None,
         next_token: Optional[str] = None,
     ) -> Dict:
-        """List agents available, calls the GET /agents/{agentId}/runs endpoint.
+        """List agent runs available, calls the GET /agents/{agentId}/runs endpoint.
 
         :param agent_id: Id of the agent
         :type agent_id: str
@@ -2927,7 +2927,7 @@ class Client:
         return self._make_request(requests.get, f'/agents/{agent_id}/runs', params=params)
 
     def get_agent_run(self, agent_id: str, run_id: str, *, get_variables: bool = False) -> Dict:
-        """Get agent, calls the GET /agents/{agentId}/runs/{runId} endpoint.
+        """Get agent run, calls the GET /agents/{agentId}/runs/{runId} endpoint.
 
         :param agent_id: Id of the agent
         :type agent_id: str
@@ -2947,6 +2947,21 @@ class Client:
                 query_params={},
             ).decode())
         return agent_run
+
+    def delete_agent_run(self, agent_id: str, run_id: str) -> Dict:
+        """Delete agent run, calls the DELETE /agents/{agentId}/runs/{runId} endpoint.
+
+        :param agent_id: Id of the agent
+        :type agent_id: str
+        :param run_id: Id of the run
+        :type run_id: str
+        :return: Agent response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.delete, f'/agents/{agent_id}/runs/{run_id}')
 
     def list_hooks(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
         """List hooks available, calls the GET /hooks endpoint.
