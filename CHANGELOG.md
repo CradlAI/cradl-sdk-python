@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.4.10 - 2025-11-24
+
+- Add get_agent_statistics method
+
 ## Version 0.4.9 - 2025-11-18
 
 - Add delete_agent_run method

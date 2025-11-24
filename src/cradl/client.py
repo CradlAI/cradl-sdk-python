@@ -2963,6 +2963,29 @@ class Client:
         """
         return self._make_request(requests.delete, f'/agents/{agent_id}/runs/{run_id}')
 
+    def get_agent_statistics(self, agent_id: str, *, after: Union[str, datetime], before: Union[str, datetime]) -> Dict:
+        """Get agent statistics, calls the GET /agents/{agentId}/statistics endpoint.
+
+        :param agent_id: Id of the agent
+        :type agent_id: str
+        :param after: Start time for statistics interval
+        :type after: str or datetime, optional
+        :param before: End time for statistics interval
+        :type before: str or datetime, optional
+        :return: Agent statistics response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        params = {
+            'after': datetimestr(after),
+            'before': datetimestr(before),
+        }
+
+        agent_statistics = self._make_request(requests.get, f'/agents/{agent_id}/statistics', params=params)
+        return agent_statistics
+
     def list_hooks(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
         """List hooks available, calls the GET /hooks endpoint.
 
