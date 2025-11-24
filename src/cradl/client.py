@@ -2983,7 +2983,7 @@ class Client:
             'before': datetimestr(before),
         }
 
-        agent_statistics = self._make_request(requests.get, f'/agents/{agent_id}/statistics/', params=params)
+        agent_statistics = self._make_request(requests.get, f'/agents/{agent_id}/statistics', params=params)
         return agent_statistics
 
     def list_hooks(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
