@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.4.11 - 2026-01-15
+
+- Add create_suggestion method
+
 ## Version 0.4.10 - 2025-11-24
 
 - Add get_agent_statistics method

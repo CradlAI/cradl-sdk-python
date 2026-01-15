@@ -3393,3 +3393,26 @@ class Client:
         })
         return self._make_request(requests.post, f'/actions/{action_id}/runs', body=body)
 
+    def create_suggestion(self, text: str, document_id: str, suggestion_type: str ='raw', **optional_args) -> Dict:
+        """Creates a suggestion, calls the POST /suggestions endpoint.
+
+        :param text: text to use as a prompt for the agent
+        :type text: str
+        :param document_id: Id of the document
+        :type document_id: str
+        :param suggestion_type: what kind of suggestion to get
+        :type suggestion_type: str
+        :return: Suggestion response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body = {
+            'text': text,
+            'documentId': document_id,
+            'type': suggestion_type,
+            **optional_args,
+        }
+        return self._make_request(requests.post, '/suggestions', body=body)
+
