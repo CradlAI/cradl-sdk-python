@@ -55,15 +55,14 @@ class Credentials:
         if access_token:
             if not isinstance(access_token, str):
                 raise ValueError(f'access_token must be a JWT token formatted as a string, got {type(access_token)}')
-
             try:
-                expiration = b64decode(access_token.split('.')[1])['expiration']
+                access_token_payload = access_token.split('.')[1]
+                padding = '=' * (len(access_token_payload) % 4)
+                expiration = json.loads(b64decode(access_token_payload + padding))['exp']
             except IndexError:
                 raise ValueError(f'Invalid access token "{access_token}". Expected a JWT token')
             except KeyError:
-                raise ValueError(
-                    f'Invalid access token "{access_token}". Expected a JWT token with "expiration" as a key'
-                )
+                raise ValueError(f'Invalid access token "{access_token}". Expected a JWT token with "exp" as a key')
 
             self._token = access_token, expiration
         elif cached_profile:
