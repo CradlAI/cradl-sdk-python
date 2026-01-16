@@ -3,7 +3,7 @@ import os
 import time
 from os.path import exists, expanduser
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -39,17 +39,31 @@ class Credentials:
         api_endpoint: str,
         cached_profile: str = None,
         cache_path: Path = Path(expanduser('~/.cradl/token-cache.json')),
+        access_token: str = None,
+        access_token_expiration: Union[float, str] = None,
     ):
         if not all([client_id, client_secret, auth_endpoint, api_endpoint]):
             raise MissingCredentials
 
-        self._token = read_token_from_cache(cached_profile, cache_path) if cached_profile else NULL_TOKEN
         self.client_id = client_id
         self.client_secret = client_secret
         self.auth_endpoint = auth_endpoint
         self.api_endpoint = api_endpoint
         self.cached_profile = cached_profile
         self.cache_path = cache_path
+
+        if access_token and access_token_expiration:
+            try:
+                expiration = float(access_token_expiration)
+            except ValueError:
+                raise ValueError(
+                    f'Invalid access_token_expiration "{access_token_expiration}". Expected a unix timestamp'
+                )
+            self._token = access_token, expiration
+        elif cached_profile:
+            self._token = read_token_from_cache(cached_profile, cache_path)
+        else:
+            self._token = NULL_TOKEN
 
     @property
     def access_token(self) -> str:
@@ -124,12 +138,14 @@ def read_from_environ() -> List[Optional[str]]:
     :return: List of client_id, client_secret, auth_endpoint, api_endpoint
     :rtype: List[Optional[str]]"""
 
-    return [os.environ.get(k) for k in (
-        'CRADL_CLIENT_ID',
-        'CRADL_CLIENT_SECRET',
-        'CRADL_AUTH_ENDPOINT',
-        'CRADL_API_ENDPOINT',
-    )]
+    return dict(
+            access_token=os.environ.get('CRADL_ACCESS_TOKEN'),
+            access_token_expiration=os.environ.get('CRADL_ACCESS_TOKEN_EXPIRATION'),
+            api_endpoint=os.environ.get('CRADL_API_ENDPOINT'),
+            auth_endpoint=os.environ.get('CRADL_AUTH_ENDPOINT'),
+            client_id=os.environ.get('CRADL_CLIENT_ID'),
+            client_secret=os.environ.get('CRADL_CLIENT_SECRET'),
+        )
 
 
 def read_from_file(credentials_path: str = expanduser('~/.cradl/credentials.json'),
@@ -152,13 +168,16 @@ def read_from_file(credentials_path: str = expanduser('~/.cradl/credentials.json
         raise MissingCredentials(f'Could not find credentials for profile {profile}')
 
     credentials = all_credentials[profile]
-    client_id = credentials.get('client_id')
-    client_secret = credentials.get('client_secret')
-    auth_endpoint = credentials.get('auth_endpoint')
-    api_endpoint = credentials.get('api_endpoint')
-    cached_profile = profile if credentials.get('use_cache', False) else None
 
-    return [client_id, client_secret, auth_endpoint, api_endpoint, cached_profile]
+    return dict(
+        access_token=credentials.get('access_token'),
+        access_token_expiration=credentials.get('access_token_expiration'),
+        api_endpoint=credentials.get('api_endpoint'),
+        auth_endpoint=credentials.get('auth_endpoint'),
+        cached_profile=profile if credentials.get('use_cache', False) else None,
+        client_id=credentials.get('client_id'),
+        client_secret=credentials.get('client_secret'),
+    )
 
 
 def guess_credentials(profile=None) -> Credentials:
@@ -173,12 +192,13 @@ def guess_credentials(profile=None) -> Credentials:
 
     if profile:
         try:
-            return Credentials(*read_from_file(profile=profile))
+            return Credentials(**read_from_file(profile=profile))
         except:
             raise MissingCredentials(f'Could not find valid credentials for {profile} in ~/.cradl/credentials.json')
 
     for guesser in [read_from_environ, read_from_file]:
-        args = guesser()  # type: ignore
-        if len(args) >= 4 and all(args[:4]):
-            return Credentials(*args)
+        try:
+            return Credentials(**guesser())  # Will raise MissingCredentials if not all required fields are present
+        except MissingCredentials:
+            continue
     raise MissingCredentials
