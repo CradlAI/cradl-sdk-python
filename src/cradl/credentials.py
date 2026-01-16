@@ -1,6 +1,7 @@
 import json
 import os
 import time
+from base64 import b64decode
 from os.path import exists, expanduser
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
@@ -40,7 +41,6 @@ class Credentials:
         cached_profile: str = None,
         cache_path: Path = Path(expanduser('~/.cradl/token-cache.json')),
         access_token: str = None,
-        access_token_expiration: Union[float, str] = None,
     ):
         if not all([client_id, client_secret, auth_endpoint, api_endpoint]):
             raise MissingCredentials
@@ -52,13 +52,19 @@ class Credentials:
         self.cached_profile = cached_profile
         self.cache_path = cache_path
 
-        if access_token and access_token_expiration:
+        if access_token:
+            if not isinstance(access_token, str):
+                raise ValueError(f'access_token must be a JWT token formatted as a string, got {type(access_token)}')
+
             try:
-                expiration = float(access_token_expiration)
-            except ValueError:
+                expiration = b64decode(access_token.split('.')[1])['expiration']
+            except IndexError:
+                raise ValueError(f'Invalid access token "{access_token}". Expected a JWT token')
+            except KeyError:
                 raise ValueError(
-                    f'Invalid access_token_expiration "{access_token_expiration}". Expected a unix timestamp'
+                    f'Invalid access token "{access_token}". Expected a JWT token with "expiration" as a key'
                 )
+
             self._token = access_token, expiration
         elif cached_profile:
             self._token = read_token_from_cache(cached_profile, cache_path)
@@ -140,7 +146,6 @@ def read_from_environ() -> List[Optional[str]]:
 
     return dict(
             access_token=os.environ.get('CRADL_ACCESS_TOKEN'),
-            access_token_expiration=os.environ.get('CRADL_ACCESS_TOKEN_EXPIRATION'),
             api_endpoint=os.environ.get('CRADL_API_ENDPOINT'),
             auth_endpoint=os.environ.get('CRADL_AUTH_ENDPOINT'),
             client_id=os.environ.get('CRADL_CLIENT_ID'),
@@ -171,7 +176,6 @@ def read_from_file(credentials_path: str = expanduser('~/.cradl/credentials.json
 
     return dict(
         access_token=credentials.get('access_token'),
-        access_token_expiration=credentials.get('access_token_expiration'),
         api_endpoint=credentials.get('api_endpoint'),
         auth_endpoint=credentials.get('auth_endpoint'),
         cached_profile=profile if credentials.get('use_cache', False) else None,

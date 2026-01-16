@@ -18,14 +18,20 @@ from cradl.credentials import (
 def section():
     return 'test'
 
+
 @pytest.fixture
 def use_cache():
     return None
 
 
 @pytest.fixture
-def credentials_path(tmp_path, section, use_cache):
-    credentials_path = tmp_path / 'credentials.json'
+def access_tuple():
+    return None, None
+
+
+@pytest.fixture
+def credentials_path(tmp_path, section, use_cache, access_tuple):
+    _path = tmp_path / 'credentials.json'
     credentials_dict = {
         section: {
             'client_id': 'test',
@@ -34,10 +40,16 @@ def credentials_path(tmp_path, section, use_cache):
             'client_secret': 'test',
         }
     }
+
     if isinstance(use_cache, bool):
         credentials_dict[section]['use_cache'] = use_cache
-    credentials_path.write_text(json.dumps(credentials_dict, indent=2))
-    return credentials_path
+
+    if access_tuple != (None, None):
+        credentials_dict[section]['access_token'] = access_tuple[0]
+        credentials_dict[section]['access_token_expiration'] = access_tuple[1]
+
+    _path.write_text(json.dumps(credentials_dict, indent=2))
+    return _path
 
 
 @pytest.fixture(scope='function')
