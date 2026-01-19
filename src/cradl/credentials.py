@@ -202,7 +202,7 @@ def guess_credentials(profile=None) -> Credentials:
 
     for guesser in [read_from_environ, read_from_file]:
         try:
-            return Credentials(**guesser())  # Will raise MissingCredentials if not all required fields are present
-        except MissingCredentials:
+            return Credentials(**guesser())  # Will raise TypeError if incomplete
+        except TypeError:
             continue
     raise MissingCredentials

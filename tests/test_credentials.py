@@ -92,7 +92,8 @@ def test_guess_credentials(section, credentials_path):
             guess_credentials(profile='missing-section')
 
         # Use credentials from file if the credentials from the environment are incomplete
-        mp.setattr('cradl.credentials.read_from_environ', lambda: mock_read_from_environ()[:2])
+        incomplete_credentials = {k: v for k, v in mock_read_from_environ().items() if k != 'client_secret'}
+        mp.setattr('cradl.credentials.read_from_environ', lambda: incomplete_credentials)
         equal_credentials(guess_credentials(), credentials_from_file)
 
 
