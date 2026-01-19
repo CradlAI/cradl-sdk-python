@@ -139,17 +139,18 @@ def read_from_environ() -> List[Optional[str]]:
         - CRADL_CLIENT_SECRET
         - CRADL_AUTH_ENDPOINT
         - CRADL_API_ENDPOINT
+        - CRADL_ACCESS_TOKEN (optional)
 
     :return: List of client_id, client_secret, auth_endpoint, api_endpoint
     :rtype: List[Optional[str]]"""
 
     return dict(
-            access_token=os.environ.get('CRADL_ACCESS_TOKEN'),
-            api_endpoint=os.environ.get('CRADL_API_ENDPOINT'),
-            auth_endpoint=os.environ.get('CRADL_AUTH_ENDPOINT'),
-            client_id=os.environ.get('CRADL_CLIENT_ID'),
-            client_secret=os.environ.get('CRADL_CLIENT_SECRET'),
-        )
+        access_token=os.environ.get('CRADL_ACCESS_TOKEN'),
+        api_endpoint=os.environ.get('CRADL_API_ENDPOINT'),
+        auth_endpoint=os.environ.get('CRADL_AUTH_ENDPOINT'),
+        client_id=os.environ.get('CRADL_CLIENT_ID'),
+        client_secret=os.environ.get('CRADL_CLIENT_SECRET'),
+    )
 
 
 def read_from_file(credentials_path: str = expanduser('~/.cradl/credentials.json'),
