@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.5.0 - 2026-01-16
+
+- Add access_token and access_token_expiration as input arguments to Credentials constructor
+
 ## Version 0.4.10 - 2025-11-24
 
 - Add get_agent_statistics method

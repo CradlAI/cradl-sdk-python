@@ -18,14 +18,20 @@ from cradl.credentials import (
 def section():
     return 'test'
 
+
 @pytest.fixture
 def use_cache():
     return None
 
 
 @pytest.fixture
-def credentials_path(tmp_path, section, use_cache):
-    credentials_path = tmp_path / 'credentials.json'
+def access_token():
+    return None
+
+
+@pytest.fixture
+def credentials_path(tmp_path, section, use_cache, access_token):
+    _path = tmp_path / 'credentials.json'
     credentials_dict = {
         section: {
             'client_id': 'test',
@@ -34,10 +40,15 @@ def credentials_path(tmp_path, section, use_cache):
             'client_secret': 'test',
         }
     }
+
     if isinstance(use_cache, bool):
         credentials_dict[section]['use_cache'] = use_cache
-    credentials_path.write_text(json.dumps(credentials_dict, indent=2))
-    return credentials_path
+
+    if access_token:
+        credentials_dict[section]['access_token'] = access_token
+
+    _path.write_text(json.dumps(credentials_dict, indent=2))
+    return _path
 
 
 @pytest.fixture(scope='function')
@@ -45,8 +56,13 @@ def cache_path(tmp_path):
     return tmp_path / 'token-cache.json'
 
 
-def mock_read_from_environ(*args, **kwargs):
-    return ['foo', 'bar', 'baz', 'foobar']
+def mock_read_from_environ():
+    return {
+        'client_id': 'foo',
+        'auth_endpoint': 'bar',
+        'api_endpoint': 'baz',
+        'client_secret': 'foobar',
+    }
 
 def equal_credentials(c0, c1):
     return all([
@@ -58,7 +74,7 @@ def equal_credentials(c0, c1):
 
 @pytest.mark.parametrize('section', ['default'])
 def test_guess_credentials(section, credentials_path):
-    credentials_from_env = Credentials(*mock_read_from_environ())
+    credentials_from_env = Credentials(**mock_read_from_environ())
 
     with pytest.MonkeyPatch().context() as mp:
         mp.setattr('cradl.credentials.read_from_environ', mock_read_from_environ)
@@ -76,7 +92,8 @@ def test_guess_credentials(section, credentials_path):
             guess_credentials(profile='missing-section')
 
         # Use credentials from file if the credentials from the environment are incomplete
-        mp.setattr('cradl.credentials.read_from_environ', lambda: mock_read_from_environ()[:2])
+        incomplete_credentials = {k: v for k, v in mock_read_from_environ().items() if k != 'client_secret'}
+        mp.setattr('cradl.credentials.read_from_environ', lambda: incomplete_credentials)
         equal_credentials(guess_credentials(), credentials_from_file)
 
 
@@ -100,7 +117,7 @@ def test_credentials_with_empty_cache(client):
 
 def test_credentials_with_cache(cache_path, token, section):
     write_token_to_cache(section, (token['access_token'], token['expires_in']), cache_path)
-    credentials = Credentials(*read_from_environ(), cached_profile=section, cache_path=cache_path)
+    credentials = Credentials(**read_from_environ(), cached_profile=section, cache_path=cache_path)
     assert credentials._token == (token['access_token'], token['expires_in'])
     assert credentials.cached_profile == section
 
@@ -108,7 +125,7 @@ def test_credentials_with_cache(cache_path, token, section):
 def test_read_from_file_with_cache(credentials_path, section, token, cache_path):
     write_token_to_cache(section, (token['access_token'], token['expires_in']), cache_path)
     args = read_from_file(str(credentials_path), section)
-    credentials = Credentials(*args, cache_path=cache_path)
+    credentials = Credentials(**args, cache_path=cache_path)
     assert credentials.cached_profile == section
     assert credentials._token == (token['access_token'], token['expires_in'])
 
@@ -117,7 +134,7 @@ def test_read_from_file_with_no_cache(credentials_path, section, token, cache_pa
     write_token_to_cache(section, (token['access_token'], token['expires_in']), cache_path)
     args = read_from_file(str(credentials_path), section)
 
-    credentials = Credentials(*args, cache_path=cache_path)
+    credentials = Credentials(**args, cache_path=cache_path)
     assert credentials.cached_profile is None
     assert credentials._token == NULL_TOKEN
 
@@ -126,6 +143,28 @@ def test_read_from_file_without_cache(credentials_path, section, token, cache_pa
     write_token_to_cache(section, (token['access_token'], token['expires_in']), cache_path)
     args = read_from_file(str(credentials_path), section)
 
-    credentials = Credentials(*args, cache_path=cache_path)
+    credentials = Credentials(**args, cache_path=cache_path)
     assert credentials.cached_profile is None
     assert credentials._token == NULL_TOKEN
+
+
+@pytest.mark.parametrize('access_token', [
+    'eyJhbGc.eyJleHAiOiAxMjM0NX0.z-Bs5FbgzWCYZ',
+    'eyJhbGc.eyJleHAiOiAxMjM0NX0=.z-Bs5FbgzWCYZ',  # Test with different padding
+    'eyJhbGc.eyJleHAiOiAxMjM0NX0==.z-Bs5FbgzWCYZ',  # Test with different padding
+    None,
+])
+def test_read_with_access_token(credentials_path, section, access_token, cache_path):
+    args = read_from_file(str(credentials_path), section)
+    Credentials(**args)
+
+
+@pytest.mark.parametrize('access_token', [
+    'eyJleHAiOiAxMjM0NX0',  # Only the payload
+    'eyJhbGc.eyJleHBpIjogMTIzNDV9.z-Bs5FbgzWCYZ',  # Bad dict
+    123.321,  # Test as a float
+])
+def test_invalid_access_token(credentials_path, section, access_token, cache_path):
+    args = read_from_file(str(credentials_path), section)
+    with pytest.raises(ValueError):
+        Credentials(**args)
