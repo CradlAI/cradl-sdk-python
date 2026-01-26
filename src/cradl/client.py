@@ -2647,6 +2647,22 @@ class Client:
         body.update(**optional_args)
         return self._make_request(requests.post, '/validations', body=body)
 
+    def update_validation(self, validation_id: str, *, config: dict = None, **optional_args ) -> Dict:
+        """Update the validation with the provided validation_id, calls the PATCH /validations/{validation_id} endpoint.
+
+        :param validation_id: Id of the validation
+        :type validation_id: str
+        :param config: New configuration for the validation
+        :type config: str
+        :return: Validation response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body = {'config': config, **optional_args}
+        return self._make_request(requests.patch, f'/validations/{validation_id}', body=body)
+
     def delete_validation(self, validation_id: str) -> Dict:
         """Delete the validation with the provided validation_id, calls the DELETE /validations/{validation_id} endpoint.
 
@@ -2769,6 +2785,21 @@ class Client:
             'status': status,
         })
         return self._make_request(requests.get, f'/validations/{validation_id}/tasks', params=dictstrip(params))
+
+    def get_validation_task(self, validation_id: str, validation_task_id: str) -> Dict:
+        """Get a validation, calls the GET /validations/{validationId}/tasks/{taskId} endpoint.
+
+        :param validation_id: Id of the validation
+        :type validation_id: str
+        :param validation_task_id: Id of the validation task
+        :type validation_task_id: str
+        :return: ValidationTask response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.get, f'/validations/{validation_id}/tasks/{validation_task_id}')
 
     def create_agent(
         self,
@@ -2947,6 +2978,23 @@ class Client:
                 query_params={},
             ).decode())
         return agent_run
+
+    def patch_agent_run(self, agent_id: str, run_id: str, status: str) -> Dict:
+        """Update agent run, calls the PATCH /agents/{agentId}/runs/{runId} endpoint.
+
+        :param agent_id: Id of the agent
+        :type agent_id: str
+        :param run_id: Id of the run
+        :type run_id: str
+        :param status: New status of the agent run
+        :type status: str
+        :return: AgentRun response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.patch, f'/agents/{agent_id}/runs/{run_id}', body={'status': status})
 
     def delete_agent_run(self, agent_id: str, run_id: str) -> Dict:
         """Delete agent run, calls the DELETE /agents/{agentId}/runs/{runId} endpoint.
@@ -3134,6 +3182,37 @@ class Client:
         body.update(**optional_args)
         return self._make_request(requests.patch, f'/hooks/{hook_id}', body=body)
 
+    def create_hook_run(
+        self,
+        hook_id: str,
+        input: dict,
+        agent_run_id: Optional[str] = None,
+        *,
+        metadata: Optional[dict] = None,
+    ) -> Dict:
+        """Create hook run, calls the POST /hooks/{hookId}/runs endpoint.
+
+        :param hook_id: Id of the hook
+        :type hook_id: str
+        :param input: Dictionary with input to the run
+        :type input: dict
+        :param agent_run_id: Id of an agent run to associate with the hook run
+        :type agent_run_id: str
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
+        :return: Action response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+    :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body = dictstrip({
+            'agentRunId': agent_run_id,
+            'input': input,
+            'metadata': metadata,
+        })
+        return self._make_request(requests.post, f'/hooks/{hook_id}/runs', body=body)
+
     def list_hook_runs(
         self,
         hook_id: str,
@@ -3179,6 +3258,21 @@ class Client:
     :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.get, f'/hooks/{hook_id}/runs/{run_id}')
+
+    def update_hook_run(self, hook_id: str, run_id: str, **optional_args) -> Dict:
+        """Update hook run, calls the PATCH /hooks/{hookId}/runs/{runId} endpoint.
+
+        :param hook_id: Id of the hook
+        :type hook_id: str
+        :param run_id: Id of the run
+        :type run_id: str
+        :return: Hook response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+    :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.patch, f'/hooks/{hook_id}/runs/{run_id}', body=optional_args)
 
     def list_actions(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
         """List actions available, calls the GET /actions endpoint.
@@ -3393,3 +3487,34 @@ class Client:
         })
         return self._make_request(requests.post, f'/actions/{action_id}/runs', body=body)
 
+    def update_action_run(
+        self,
+        action_id: str,
+        run_id: str,
+        *,
+        output: dict = None,
+        status: str = None,
+        **optional_args,
+    ) -> Dict:
+        """Update action run, calls the PATCH /actions/{actionId}/runs/{runId} endpoint.
+
+        :param action_id: Id of the action
+        :type action_id: str
+        :param run_id: Id of the run
+        :type run_id: str
+        :param output: output dictionary of the action run
+        :type output: dict
+        :param status: New status of the action run
+        :type status: str
+        :return: Action response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+    :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body = dictstrip({
+            'output': output,
+            'status': status,
+        })
+        body.update(**optional_args)
+        return self._make_request(requests.patch, f'/actions/{action_id}/runs/{run_id}', body=body)
