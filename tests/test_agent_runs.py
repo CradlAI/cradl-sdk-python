@@ -37,5 +37,5 @@ def test_get_agent_run(client: Client):
 def test_update_agent_run(client: Client):
     agent_id = service.create_agent_id()
     run_id = service.create_agent_run_id()
-    run = client.update_agent_run(agent_id, run_id, status='succeeded')
+    run = client.update_agent_run(agent_id, run_id, status='archived')
     assert_agent_run(run)
