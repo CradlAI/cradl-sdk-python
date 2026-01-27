@@ -19,8 +19,7 @@ def test_create_agent(client: Client):
             service.create_hook_id(),
             service.create_validation_id(),
             service.create_model_id(),
-        ]
-        ,
+        ],
     )
     assert_agent(agent)
 
@@ -44,6 +43,7 @@ def test_list_agents_with_pagination(client: Client, max_results, next_token):
     assert 'nextToken' in response, 'Missing nextToken in response'
     for agent in response['agents']:
         assert_agent(agent)
+
 
 def test_get_agent(client: Client):
     agent_id = service.create_agent_id()

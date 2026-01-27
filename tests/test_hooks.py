@@ -4,10 +4,12 @@ from cradl.client import Client
 
 from . import service
 
+
 def assert_hook(hook):
     assert 'hookId' in hook, 'Missing hookId in hook'
     assert 'name' in hook, 'Missing name in hook'
     assert 'trigger' in hook, 'Missing trigger in hook'
+
 
 def test_create_hook(client: Client):
     hook = client.create_hook(
