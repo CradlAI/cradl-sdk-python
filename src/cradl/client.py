@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Union
 from urllib.parse import urlparse, quote
 
-import requests
-from requests.exceptions import RequestException
+import requests  # type: ignore
+from requests.exceptions import RequestException  # type: ignore
 
 from .credentials import Credentials, guess_credentials
 from .content import parse_content
@@ -65,7 +65,7 @@ class Client:
             raise EmptyRequestError
 
         kwargs = {'params': params}
-        None if body is None else kwargs.update({'data': json.dumps(body)})
+        None if body is None else kwargs.update({'data': json.dumps(body)})  # type: ignore
         uri = urlparse(f'{self.credentials.api_endpoint}{path}')
 
         headers = {
@@ -94,7 +94,7 @@ class Client:
 
         kwargs = {'params': query_params}
         if content:
-            kwargs.update({'data': content})
+            kwargs.update({'data': content})  # type: ignore
         uri = urlparse(file_url)
 
         headers = {'Authorization': f'Bearer {self.credentials.access_token}'}

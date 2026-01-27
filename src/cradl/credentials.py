@@ -4,10 +4,9 @@ import time
 from base64 import b64decode
 from os.path import exists, expanduser
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
-import requests
-from requests.auth import HTTPBasicAuth
+import requests  # type: ignore
 
 from .log import setup_logging
 
@@ -39,7 +38,7 @@ class Credentials:
         auth_endpoint: str,
         api_endpoint: str,
         cached_profile: Optional[str] = None,
-        cache_path: Path = Path(expanduser('~/.cradl/token-cache.json')),
+        cache_path: Optional[Path] = Path(expanduser('~/.cradl/token-cache.json')),
         access_token: Optional[str] = None,
     ):
         if not all([client_id, client_secret, auth_endpoint, api_endpoint]):
@@ -65,7 +64,7 @@ class Credentials:
                 raise ValueError(f'Invalid access token "{access_token}". Expected a JWT token with "exp" as a key')
 
             self._token = access_token, expiration
-        elif cached_profile:
+        elif cached_profile and isinstance(cache_path, Path):
             self._token = read_token_from_cache(cached_profile, cache_path)
         else:
             self._token = NULL_TOKEN
@@ -78,7 +77,7 @@ class Credentials:
             access_token, expiration = self._get_client_credentials()
             self._token = (access_token, expiration)
 
-            if self.cached_profile:
+            if self.cached_profile and isinstance(self.cache_path, Path):
                 write_token_to_cache(self.cached_profile, self._token, self.cache_path)
 
         return access_token
@@ -95,7 +94,7 @@ class Credentials:
         else:
             url = f'https://{self.auth_endpoint}/token?grant_type=client_credentials'
             headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-            auth = HTTPBasicAuth(self.client_id, self.client_secret)
+            auth = requests.auth.HTTPBasicAuth(self.client_id, self.client_secret)
             response = requests.post(url, headers=headers, auth=auth)
 
         response.raise_for_status()
@@ -133,7 +132,7 @@ def write_token_to_cache(cached_profile, token, cache_path: Path):
     cache_path.write_text(json.dumps(cache, indent=2))
 
 
-def read_from_environ() -> List[Optional[str]]:
+def read_from_environ() -> dict[str, Optional[str]]:
     """Read the following environment variables and return them:
         - CRADL_CLIENT_ID
         - CRADL_CLIENT_SECRET
@@ -141,8 +140,8 @@ def read_from_environ() -> List[Optional[str]]:
         - CRADL_API_ENDPOINT
         - CRADL_ACCESS_TOKEN (optional)
 
-    :return: List of client_id, client_secret, auth_endpoint, api_endpoint
-    :rtype: List[Optional[str]]"""
+    :return: Dictionary of client_id, client_secret, auth_endpoint, api_endpoint, cached_profile
+    :rtype: dict[str, Optional[str]]"""
 
     return dict(
         access_token=os.environ.get('CRADL_ACCESS_TOKEN'),
@@ -153,8 +152,10 @@ def read_from_environ() -> List[Optional[str]]:
     )
 
 
-def read_from_file(credentials_path: str = expanduser('~/.cradl/credentials.json'),
-                   profile: str = 'default') -> List[Optional[str]]:
+def read_from_file(
+    credentials_path: str = expanduser('~/.cradl/credentials.json'),
+    profile: str = 'default',
+) -> dict[str, Optional[str]]:
     """Read a json file and return credentials from it. Defaults to '~/.cradl/credentials.json'.
 
     :param credentials_path: Path to read credentials from.
@@ -162,8 +163,8 @@ def read_from_file(credentials_path: str = expanduser('~/.cradl/credentials.json
     :param profile: profile to read credentials from.
     :type profile: str
 
-    :return: List of client_id, client_secret, auth_endpoint, api_endpoint, cached_profile
-    :rtype: List[Optional[str]]"""
+    :return: Dictionary of client_id, client_secret, auth_endpoint, api_endpoint, cached_profile
+    :rtype: dict[str, Optional[str]]"""
 
     if not exists(credentials_path):
         raise MissingCredentials
@@ -196,13 +197,13 @@ def guess_credentials(profile=None) -> Credentials:
 
     if profile:
         try:
-            return Credentials(**read_from_file(profile=profile))
+            return Credentials(**read_from_file(profile=profile))  # type: ignore
         except Exception:
             raise MissingCredentials(f'Could not find valid credentials for {profile} in ~/.cradl/credentials.json')
 
     for guesser in [read_from_environ, read_from_file]:
         try:
-            return Credentials(**guesser())  # Will raise TypeError if incomplete
+            return Credentials(**guesser())  # type: ignore
         except (TypeError, MissingCredentials):
             continue
     raise MissingCredentials
