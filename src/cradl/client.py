@@ -283,7 +283,7 @@ class Client:
         self,
         payment_method_id: str,
         *,
-        stripe_setup_intent_secret: str = None,
+        stripe_setup_intent_secret: Optional[str] = None,
         **optional_args
     ) -> Dict:
         """Updates a payment_method, calls the PATCH /paymentMethods/{paymentMethodId} endpoint.
@@ -419,13 +419,13 @@ class Client:
         content: Content,
         *,
         consent_id: Optional[str] = None,
-        dataset_id: str = None,
-        description: str = None,
-        ground_truth: Sequence[Dict[str, str]] = None,
+        dataset_id: Optional[str] = None,
+        description: Optional[str] = None,
+        ground_truth: Optional[Sequence[Dict[str, str]]] = None,
         metadata: Optional[dict] = None,
-        name: str = None,
-        agent_run_id: str = None,
-        retention_in_days: int = None,
+        name: Optional[str] = None,
+        agent_run_id: Optional[str] = None,
+        retention_in_days: Optional[int] = None,
     ) -> Dict:
         """Creates a document, calls the POST /documents endpoint.
 
@@ -638,10 +638,10 @@ class Client:
         self,
         document_id: str,
         # For backwards compatibility reasons, ground truth is placed before the *
-        ground_truth: Sequence[Dict[str, Union[Optional[str], bool]]] = None,
+        ground_truth: Optional[Sequence[Dict[str, Union[Optional[str], bool]]]] = None,
         *,
         metadata: Optional[dict] = None,
-        dataset_id: str = None,
+        dataset_id: Optional[str] = None,
     ) -> Dict:
         """Update ground truth for a document, calls the PATCH /documents/{documentId} endpoint.
         Updating ground truth means adding the ground truth data for the particular document.
@@ -972,8 +972,8 @@ class Client:
         self,
         organization_id: str,
         *,
-        payment_method_id: str = None,
-        document_retention_in_days: int = None,
+        payment_method_id: Optional[str] = None,
+        document_retention_in_days: Optional[int] = None,
         **optional_args,
     ) -> Dict:
         """Updates an organization, calls the PATCH /organizations/{organizationId} endpoint.
@@ -1537,7 +1537,7 @@ class Client:
         body.update(**optional_args)
         return self._make_request(requests.post, '/validations', body=body)
 
-    def update_validation(self, validation_id: str, *, config: dict = None, **optional_args) -> Dict:
+    def update_validation(self, validation_id: str, *, config: Optional[dict] = None, **optional_args) -> Dict:
         """Update the validation with the provided validation_id, calls the PATCH /validations/{validation_id} endpoint.
 
         :param validation_id: Id of the validation
@@ -1576,7 +1576,7 @@ class Client:
         input: dict,
         *,
         metadata: Optional[dict] = None,
-        agent_run_id: str = None,
+        agent_run_id: Optional[str] = None,
         **optional_args,
     ) -> Dict:
         """Creates a validation, calls the POST /validations endpoint.
@@ -1801,7 +1801,7 @@ class Client:
         }
         return self._make_request(requests.get, '/agents', params=params)
 
-    def create_agent_run(self, agent_id: str, *, variables: dict = None) -> Dict:
+    def create_agent_run(self, agent_id: str, *, variables: Optional[dict] = None) -> Dict:
         """Create agent run, calls the POST /agents/{agentId}/runs endpoint.
 
         :param agent_id: Id of the agent
@@ -2353,8 +2353,8 @@ class Client:
         action_id: str,
         run_id: str,
         *,
-        output: dict = None,
-        status: str = None,
+        output: Optional[dict] = None,
+        status: Optional[str] = None,
         **optional_args,
     ) -> Dict:
         """Update action run, calls the PATCH /actions/{actionId}/runs/{runId} endpoint.

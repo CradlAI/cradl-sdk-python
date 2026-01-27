@@ -38,9 +38,9 @@ class Credentials:
         client_secret: str,
         auth_endpoint: str,
         api_endpoint: str,
-        cached_profile: str = None,
+        cached_profile: Optional[str] = None,
         cache_path: Path = Path(expanduser('~/.cradl/token-cache.json')),
-        access_token: str = None,
+        access_token: Optional[str] = None,
     ):
         if not all([client_id, client_secret, auth_endpoint, api_endpoint]):
             raise MissingCredentials

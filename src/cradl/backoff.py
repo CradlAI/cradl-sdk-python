@@ -1,13 +1,13 @@
 import functools
 import time
-from typing import Union, Type, Callable
+from typing import Optional, Union, Type, Callable
 
 
 def exponential_backoff(
     exceptions: Union[tuple[Type[Exception]], Type[Exception]],
     base_wait: int = 1,
-    max_time: float = None,
-    max_tries: int = None,
+    max_time: Optional[float] = None,
+    max_tries: Optional[int] = None,
     rate: int = 2,
     giveup: Callable = lambda e: False,
 ) -> Callable:
