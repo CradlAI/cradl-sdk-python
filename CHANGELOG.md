@@ -4,7 +4,7 @@
 
 - Add update_validation method
 - Add get_validation_task method
-- Add patch_agent_run method
+- Add update_agent_run method
 - Add create_hook_run method
 - Add update_hook_run method
 - Add update_action_run method

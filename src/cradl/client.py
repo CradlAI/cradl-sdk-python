@@ -2718,7 +2718,7 @@ class Client:
     def update_validation_task(
         self,
         validation_id: str,
-        validation_task_id: str,
+        task_id: str,
         output: dict,
         status: str,
         *,
@@ -2729,8 +2729,8 @@ class Client:
 
         :param validation_id: Id of the validation
         :type validation_id: str
-        :param validation_task_id: Id of the validation task
-        :type validation_task_id: str
+        :param task_id: Id of the validation task
+        :type task_id: str
         :param output: Dictionary that can be used to store additional information
         :type output: dict, required if status is present, otherwise optional
         :param status: Status of the task
@@ -2751,7 +2751,7 @@ class Client:
         body.update(**optional_args)
         return self._make_request(
             requests_fn=requests.patch,
-            path=f'/validations/{validation_id}/tasks/{validation_task_id}',
+            path=f'/validations/{validation_id}/tasks/{task_id}',
             body=body,
         )
 
@@ -2786,20 +2786,20 @@ class Client:
         })
         return self._make_request(requests.get, f'/validations/{validation_id}/tasks', params=dictstrip(params))
 
-    def get_validation_task(self, validation_id: str, validation_task_id: str) -> Dict:
+    def get_validation_task(self, validation_id: str, task_id: str) -> Dict:
         """Get a validation, calls the GET /validations/{validationId}/tasks/{taskId} endpoint.
 
         :param validation_id: Id of the validation
         :type validation_id: str
-        :param validation_task_id: Id of the validation task
-        :type validation_task_id: str
+        :param task_id: Id of the validation task
+        :type task_id: str
         :return: ValidationTask response from REST API
         :rtype: dict
 
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-        return self._make_request(requests.get, f'/validations/{validation_id}/tasks/{validation_task_id}')
+        return self._make_request(requests.get, f'/validations/{validation_id}/tasks/{task_id}')
 
     def create_agent(
         self,
