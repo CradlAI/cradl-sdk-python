@@ -38,7 +38,7 @@ class Credentials:
         auth_endpoint: str,
         api_endpoint: str,
         cached_profile: Optional[str] = None,
-        cache_path: Optional[Path] = Path(expanduser('~/.cradl/token-cache.json')),
+        cache_path: Path = Path(expanduser('~/.cradl/token-cache.json')),
         access_token: Optional[str] = None,
     ):
         if not all([client_id, client_secret, auth_endpoint, api_endpoint]):
@@ -64,7 +64,7 @@ class Credentials:
                 raise ValueError(f'Invalid access token "{access_token}". Expected a JWT token with "exp" as a key')
 
             self._token = access_token, expiration
-        elif cached_profile and isinstance(cache_path, Path):
+        elif cached_profile:
             self._token = read_token_from_cache(cached_profile, cache_path)
         else:
             self._token = NULL_TOKEN
@@ -77,7 +77,7 @@ class Credentials:
             access_token, expiration = self._get_client_credentials()
             self._token = (access_token, expiration)
 
-            if self.cached_profile and isinstance(self.cache_path, Path):
+            if self.cached_profile:
                 write_token_to_cache(self.cached_profile, self._token, self.cache_path)
 
         return access_token
