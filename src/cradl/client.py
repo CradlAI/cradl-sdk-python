@@ -1805,6 +1805,8 @@ class Client:
 
         :param agent_id: Id of the agent
         :type agent_id: str
+        :param variables: additional variables to pass to the agent run
+        :type agent_id: dict
         :return: Agent response from REST API
         :rtype: dict
 
@@ -2070,37 +2072,6 @@ class Client:
         })
         body.update(**optional_args)
         return self._make_request(requests.patch, f'/hooks/{hook_id}', body=body)
-
-    def create_action_run(
-        self,
-        hook_id: str,
-        input: dict,
-        agent_run_id: Optional[str] = None,
-        *,
-        metadata: Optional[dict] = None,
-    ) -> Dict:
-        """Create hook run, calls the POST /hooks/{hookId}/runs endpoint.
-
-        :param hook_id: Id of the hook
-        :type hook_id: str
-        :param input: Dictionary with input to the run
-        :type input: dict
-        :param agent_run_id: Id of an agent run to associate with the hook run
-        :type agent_run_id: str, optional
-        :param metadata: Dictionary that can be used to store additional information
-        :type metadata: dict, optional
-        :return: Action response from REST API
-        :rtype: dict
-
-        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
-    :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
-        """
-        body = dictstrip({
-            'agentRunId': agent_run_id,
-            'input': input,
-            'metadata': metadata,
-        })
-        return self._make_request(requests.post, f'/hooks/{hook_id}/runs', body=body)
 
     def list_hook_runs(
         self,
