@@ -4,6 +4,7 @@ from cradl.client import Client
 
 from . import service
 
+
 def assert_validation_task(task):
     assert 'taskId' in task, 'Missing taskId in validation task'
     assert 'validationId' in task, 'Missing validationId in validation task'
