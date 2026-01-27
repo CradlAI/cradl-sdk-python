@@ -6,10 +6,6 @@ def create_app_client_id():
     return f'las:app-client:{uuid4().hex}'
 
 
-def create_asset_id():
-    return f'las:asset:{uuid4().hex}'
-
-
 def create_dataset_id():
     return f'las:dataset:{uuid4().hex}'
 
@@ -38,20 +34,8 @@ def create_prediction_id():
     return f'las:prediction:{uuid4().hex}'
 
 
-def create_deployment_environment_id():
-    return f'las:deployment-environment:{uuid4().hex}'
-
-
 def create_plan_id():
     return f'las:plan:{uuid4().hex}'
-
-
-def create_data_bundle_id():
-    return f'las:model-data-bundle:{uuid4().hex}'
-
-
-def create_training_id():
-    return f'las:model-training:{uuid4().hex}'
 
 
 def create_organization_id():
@@ -62,32 +46,12 @@ def create_secret_id():
     return f'las:secret:{uuid4().hex}'
 
 
-def create_transition_id():
-    return f'las:transition:{uuid4().hex}'
-
-
-def create_transition_execution_id():
-    return f'las:transition-execution:{uuid4().hex}'
-
-
 def create_user_id():
     return f'las:user:{uuid4().hex}'
 
 
-def create_workflow_id():
-    return f'las:workflow:{uuid4().hex}'
-
-
 def create_role_id():
     return f'las:role:{uuid4().hex}'
-
-
-def create_workflow_execution_id():
-    return f'las:workflow-execution:{uuid4().hex}'
-
-
-def create_transformation_id():
-    return f'las:dataset-transformation:{uuid4().hex}'
 
 
 def create_error_config():
