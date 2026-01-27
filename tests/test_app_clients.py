@@ -6,7 +6,7 @@ from cradl.client import Client
 from . import service, util
 
 
-@pytest.mark.skip(reason='This resource is currently not intended to use in the new API')
+@pytest.mark.skip(reason='This resource is currently not intended for use with the new API')
 @pytest.mark.parametrize('name_and_description', util.name_and_description_combinations())
 def test_create_app_client(client: Client, name_and_description):
     response = client.create_app_client(role_ids=[service.create_role_id()], **name_and_description)
