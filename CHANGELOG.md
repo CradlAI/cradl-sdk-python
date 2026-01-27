@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 0.5.0 - 2026-01-27
+## Version 0.6.0 - 2026-01-27
 
 - Add update_validation method
 - Add get_validation_task method
@@ -8,6 +8,7 @@
 - Add create_hook_run method
 - Add update_hook_run method
 - Add update_action_run method
+- Change input parameter name from validation_task_id to task_id in update_validation_task method
 
 ## Version 0.5.0 - 2026-01-16
 
