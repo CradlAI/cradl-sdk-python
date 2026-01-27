@@ -196,6 +196,8 @@ class Client:
 
         :param app_client_id: Id of the appClient
         :type app_client_id: str
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
         :param name: Name of the appClient
         :type name: str, optional
         :param description: Description of the appClient
@@ -378,19 +380,18 @@ class Client:
 
         :param dataset_id: Id of the dataset
         :type dataset_id: str
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
         :param name: Name of the dataset
         :type name: str, optional
         :param description: Description of the dataset
         :type description: str, optional
-        :param metadata: Dictionary that can be used to store additional information
-        :type metadata: dict, optional
         :return: Dataset response from REST API
         :rtype: dict
 
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-
         body = dictstrip({'metadata': metadata})
         body.update(**optional_args)
         return self._make_request(requests.patch, f'/datasets/{dataset_id}', body=body)
@@ -447,6 +448,8 @@ class Client:
         :type retention_in_days: int, optional
         :param metadata: Dictionary that can be used to store additional information
         :type metadata: dict, optional
+        :param name: Name of the document
+        :type name: str, optional
         :return: Document response from REST API
         :rtype: dict
 
@@ -1265,7 +1268,7 @@ class Client:
         """
         return self._make_request(requests.delete, f'/secrets/{secret_id}')
 
-    def create_user(self, email: str, *, app_client_id, **optional_args) -> Dict:
+    def create_user(self, email: str, *, role_ids = None, **optional_args) -> Dict:
         """Creates a new user, calls the POST /users endpoint.
 
         >>> from cradl.client import Client
@@ -1275,7 +1278,7 @@ class Client:
         :param email: Email to the new user
         :type email: str
         :param role_ids: List of roles to assign user
-        :type role_ids: str, optional
+        :type role_ids: list, optional
         :return: User response from REST API
         :rtype: dict
 
@@ -1284,11 +1287,9 @@ class Client:
         """
         body = {
             'email': email,
-            'appClientId': app_client_id,
+            'roleIds': role_ids,
             **optional_args,
         }
-        if 'role_ids' in body:
-            body['roleIds'] = body.pop('role_ids') or []
 
         return self._make_request(requests.post, '/users', body=dictstrip(body))
 
@@ -1342,7 +1343,7 @@ class Client:
         :param user_id: Id of the user
         :type user_id: str
         :param role_ids: List of roles to assign user
-        :type role_ids: str, optional
+        :type role_ids: list, optional
         :return: User response from REST API
         :rtype: dict
 
@@ -1698,7 +1699,7 @@ class Client:
         metadata: Optional[dict] = None,
         resource_ids: Optional[list[str]] = None,
     ) -> Dict:
-        """Get agent, calls the POST /agents endpoint.
+        """Create agent, calls the POST /agents endpoint.
 
         :param name: Name of the agent
         :type name: str, optional
@@ -1706,7 +1707,7 @@ class Client:
         :type description: str, optional
         :param metadata: Dictionary that can be used to store additional information
         :type metadata: dict, optional
-        :param resource_ids: Description of the agent
+        :param resource_ids: List of resource ids for hooks, actions and validations in the agent
         :type resource_ids: list[str], optional
         :return: Agent response from REST API
         :rtype: dict
@@ -1743,7 +1744,7 @@ class Client:
         resource_ids: Optional[list[str]] = None,
         **optional_args,
     ) -> Dict:
-        """Get agent, calls the PATCH /agents/{agentId} endpoint.
+        """Update agent, calls the PATCH /agents/{agentId} endpoint.
 
         :param agent_id: Id of the agent
         :type agent_id: str
@@ -1969,19 +1970,19 @@ class Client:
         name: Optional[str] = None,
     ) -> Dict:
 
-        """Get hook, calls the POST /hooks endpoint.
+        """Create hook, calls the POST /hooks endpoint.
 
         :param trigger: What will trigger the hook to be run
         :type trigger: str
         :param function_id: Id of the function to evaluate whether to run the false or true action
-        :type function_id: str
+        :type function_id: str, optional
         :param true_action_id: Id of the action that will happen when hook run evaluates to true
-        :type true_action_id: str
+        :type true_action_id: str, optional
         :param enabled: If the hook is enabled or not
         :type enabled: bool, optional
-        :param name: Name of the dataset
+        :param name: Name of the hook
         :type name: str, optional
-        :param description: Description of the dataset
+        :param description: Description of the hook
         :type description: str, optional
         :param config: Dictionary that can be sent as input to true_action_id and false_action_id
         :type config: dict, optional
@@ -2034,9 +2035,9 @@ class Client:
         **optional_args,
     ) -> Dict:
 
-        """Get hook, calls the PATCH /hooks/{hookId} endpoint.
+        """Update hook, calls the PATCH /hooks/{hookId} endpoint.
 
-        :param hook_id: Id of the hook the hook belongs to
+        :param hook_id: Id of the hook
         :type hook_id: str
         :param trigger: What will trigger the hook to be run
         :type trigger: str, optional
@@ -2044,9 +2045,9 @@ class Client:
         :type true_action_id: str, optional
         :param enabled: If the hook is enabled or not
         :type enabled: bool, optional
-        :param name: Name of the dataset
+        :param name: Name of the hook
         :type name: str, optional
-        :param description: Description of the dataset
+        :param description: Description of the hook
         :type description: str, optional
         :param config: Dictionary that can be sent as input to true_action_id and false_action_id
         :type config: dict, optional
@@ -2071,7 +2072,7 @@ class Client:
         body.update(**optional_args)
         return self._make_request(requests.patch, f'/hooks/{hook_id}', body=body)
 
-    def create_hook_run(
+    def create_action_run(
         self,
         hook_id: str,
         input: dict,
@@ -2086,7 +2087,7 @@ class Client:
         :param input: Dictionary with input to the run
         :type input: dict
         :param agent_run_id: Id of an agent run to associate with the hook run
-        :type agent_run_id: str
+        :type agent_run_id: str, optional
         :param metadata: Dictionary that can be used to store additional information
         :type metadata: dict, optional
         :return: Action response from REST API
@@ -2134,7 +2135,7 @@ class Client:
         return self._make_request(requests.get, f'/hooks/{hook_id}/runs', params=dictstrip(params))
 
     def get_hook_run(self, hook_id: str, run_id: str) -> Dict:
-        """Get hook, calls the GET /hooks/{hookId}/runs/{runId} endpoint.
+        """Get hook run, calls the GET /hooks/{hookId}/runs/{runId} endpoint.
 
         :param hook_id: Id of the hook
         :type hook_id: str
@@ -2213,11 +2214,11 @@ class Client:
         :type function_id: str
         :param enabled: If the action is enabled or not
         :type enabled: bool, optional
-        :param name: Name of the dataset
+        :param name: Name of the action
         :type name: str, optional
-        :param description: Description of the dataset
+        :param description: Description of the action
         :type description: str, optional
-        :param config: Dictionary that can be sent as input to true_action_id and false_action_id
+        :param config: Dictionary that can be sent as input to the function
         :type config: dict, optional
         :param metadata: Dictionary that can be used to store additional information
         :type metadata: dict, optional
@@ -2265,24 +2266,24 @@ class Client:
         **optional_args,
     ) -> Dict:
 
-        """Get action, calls the PATCH /actions/{actionId} endpoint.
+        """Update action, calls the PATCH /actions/{actionId} endpoint.
 
-        :param action_id: Id of the action the action belongs to
+        :param action_id: Id of the action
         :type action_id: str
         :param enabled: If the action is enabled or not
         :type enabled: bool, optional
         :param function_id: Id of the function to run
-        :type function_id: str
-        :param name: Name of the dataset
+        :type function_id: str, optional
+        :param name: Name of the action
         :type name: str, optional
-        :param description: Description of the dataset
+        :param description: Description of the action
         :type description: str, optional
-        :param config: Dictionary that can be sent as input to true_action_id and false_action_id
+        :param config: Dictionary that can be sent as input to the function
         :type config: dict, optional
         :param metadata: Dictionary that can be used to store additional information
         :type metadata: dict, optional
         :param secret_id: Id of the secret to expand as input to functionId
-        :type secret_id: str
+        :type secret_id: str, optional
         :return: Action response from REST API
         :rtype: dict
 
