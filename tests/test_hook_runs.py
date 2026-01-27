@@ -11,7 +11,7 @@ def assert_hook_run(run):
 def test_list_hook_runs(client: Client):
     hook_id = service.create_hook_id()
     response = client.list_hook_runs(hook_id)
-    assert 'runs' in response or 'hookRuns' in response, 'Missing runs in response'
+    assert 'runs' in response, 'Missing runs in response'
     # Accept both keys for robustness
 
 @pytest.mark.parametrize('max_results,next_token', [
@@ -22,7 +22,7 @@ def test_list_hook_runs(client: Client):
 def test_list_hook_runs_with_pagination(client: Client, max_results, next_token):
     hook_id = service.create_hook_id()
     response = client.list_hook_runs(hook_id, max_results=max_results, next_token=next_token)
-    assert 'runs' in response or 'hookRuns' in response, 'Missing runs in response'
+    assert 'runs' in response, 'Missing runs in response'
 
 def test_get_hook_run(client: Client):
     hook_id = service.create_hook_id()

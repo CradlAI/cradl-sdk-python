@@ -16,7 +16,7 @@ def test_create_action_run(client: Client):
 def test_list_action_runs(client: Client):
     action_id = service.create_action_id()
     response = client.list_action_runs(action_id)
-    assert 'runs' in response or 'actionRuns' in response, 'Missing runs in response'
+    assert 'runs' in response, 'Missing runs in response'
 
 @pytest.mark.parametrize('max_results,next_token', [
     (random.randint(1, 100), None),
@@ -26,7 +26,7 @@ def test_list_action_runs(client: Client):
 def test_list_action_runs_with_pagination(client: Client, max_results, next_token):
     action_id = service.create_action_id()
     response = client.list_action_runs(action_id, max_results=max_results, next_token=next_token)
-    assert 'runs' in response or 'actionRuns' in response, 'Missing runs in response'
+    assert 'runs' in response, 'Missing runs in response'
 
 def test_get_action_run(client: Client):
     action_id = service.create_action_id()
