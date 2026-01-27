@@ -10,7 +10,7 @@ def assert_action(action):
 
 def test_create_action(client: Client):
     action = client.create_action(
-        function_id='las:function:dummyid',
+        function_id=service.create_function_id(),
         name='Test Action',
         description='A test action',
         config={'foo': 'bar'},
@@ -37,17 +37,16 @@ def test_list_actions_with_pagination(client: Client, max_results, next_token):
         assert_action(action)
 
 def test_get_action(client: Client):
-    action_id = 'las:action:dummyid'
+    action_id = service.create_action_id()
     action = client.get_action(action_id)
     assert_action(action)
 
 def test_update_action(client: Client):
-    action_id = 'las:action:dummyid'
+    action_id = service.create_action_id()
     action = client.update_action(action_id, name='Updated Action', enabled=True)
     assert_action(action)
 
 def test_delete_action(client: Client):
-    action_id = 'las:action:dummyid'
+    action_id = service.create_action_id()
     action = client.delete_action(action_id)
     assert_action(action)
-

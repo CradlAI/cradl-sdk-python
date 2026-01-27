@@ -15,6 +15,7 @@ def assert_plan(plan):
     assert 'name' in plan, 'Missing name in plan'
 
 
+@pytest.mark.skip(reason='This resource is currently not intended to use in the new API')
 def test_list_plans(client: Client):
     response = client.list_plans()
     assert 'plans' in response, 'Missing plans in response'
@@ -22,6 +23,7 @@ def test_list_plans(client: Client):
         assert_plan(plan)
 
 
+@pytest.mark.skip(reason='This resource is currently not intended to use in the new API')
 @pytest.mark.parametrize('max_results,next_token', [
     (random.randint(1, 100), None),
     (random.randint(1, 100), 'foo'),
@@ -35,6 +37,7 @@ def test_list_plans_with_pagination(client: Client, max_results, next_token):
         assert_plan(plan)
 
 
+@pytest.mark.skip(reason='This resource is currently not intended to use in the new API')
 def test_get_plan(client: Client):
     plan_id = service.create_plan_id()
     plan = client.get_plan(plan_id)

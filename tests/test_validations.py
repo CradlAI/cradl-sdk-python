@@ -36,17 +36,16 @@ def test_list_validations_with_pagination(client: Client, max_results, next_toke
         assert_validation(validation)
 
 def test_get_validation(client: Client):
-    validation_id = 'las:validation:dummyid'
+    validation_id = service.create_validation_id()
     validation = client.get_validation(validation_id)
     assert_validation(validation)
 
 def test_update_validation(client: Client):
-    validation_id = 'las:validation:dummyid'
+    validation_id = service.create_validation_id()
     validation = client.update_validation(validation_id, config={'foo': 'bar'})
     assert_validation(validation)
 
 def test_delete_validation(client: Client):
-    validation_id = 'las:validation:dummyid'
+    validation_id = service.create_validation_id()
     validation = client.delete_validation(validation_id)
     assert_validation(validation)
-

@@ -108,3 +108,39 @@ def postprocess_config():
 
 def document_path():
     return Path(__file__)
+
+
+def create_action_id():
+    return f'cradl:action:{uuid4().hex}'
+
+
+def create_action_run_id():
+    return f'cradl:action-run:{uuid4().hex}'
+
+
+def create_hook_id():
+    return f'cradl:hook:{uuid4().hex}'
+
+
+def create_hook_run_id():
+    return f'cradl:hook-run:{uuid4().hex}'
+
+
+def create_validation_id():
+    return f'cradl:validation:{uuid4().hex}'
+
+
+def create_validation_task_id():
+    return f'cradl:validation-task:{uuid4().hex}'
+
+
+def create_agent_id():
+    return f'cradl:agent:{uuid4().hex}'
+
+
+def create_agent_run_id():
+    return f'cradl:agent-run:{uuid4().hex}'
+
+
+def create_function_id():
+    return f'cradl:function:{uuid4().hex}'

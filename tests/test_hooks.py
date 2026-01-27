@@ -11,7 +11,7 @@ def assert_hook(hook):
 
 def test_create_hook(client: Client):
     hook = client.create_hook(
-        trigger='on_event',
+        trigger='Document is Created',
         name='Test Hook',
         description='A test hook',
         config={'foo': 'bar'},
@@ -38,17 +38,16 @@ def test_list_hooks_with_pagination(client: Client, max_results, next_token):
         assert_hook(hook)
 
 def test_get_hook(client: Client):
-    hook_id = 'las:hook:dummyid'
+    hook_id = service.create_hook_id()
     hook = client.get_hook(hook_id)
     assert_hook(hook)
 
 def test_update_hook(client: Client):
-    hook_id = 'las:hook:dummyid'
+    hook_id = service.create_hook_id()
     hook = client.update_hook(hook_id, name='Updated Hook', enabled=True)
     assert_hook(hook)
 
 def test_delete_hook(client: Client):
-    hook_id = 'las:hook:dummyid'
+    hook_id = service.create_hook_id()
     hook = client.delete_hook(hook_id)
     assert_hook(hook)
-
