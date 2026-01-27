@@ -2979,7 +2979,7 @@ class Client:
             ).decode())
         return agent_run
 
-    def patch_agent_run(self, agent_id: str, run_id: str, status: str) -> Dict:
+    def update_agent_run(self, agent_id: str, run_id: str, status: str) -> Dict:
         """Update agent run, calls the PATCH /agents/{agentId}/runs/{runId} endpoint.
 
         :param agent_id: Id of the agent
