@@ -90,5 +90,3 @@ def test_delete_model(client: Client):
     model_id = service.create_model_id()
     response = client.delete_model(model_id)
     assert 'modelId' in response, 'Missing modelId in response'
-
-

@@ -48,4 +48,3 @@ def test_delete_secret(client: Client):
     secret_id = service.create_secret_id()
     response = client.delete_secret(secret_id)
     assert 'secretId' in response, 'Missing secretId in response'
-

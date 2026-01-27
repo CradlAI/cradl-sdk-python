@@ -637,7 +637,8 @@ class Client:
     def update_document(
         self,
         document_id: str,
-        ground_truth: Sequence[Dict[str, Union[Optional[str], bool]]] = None,  # For backwards compatibility reasons, this is placed before the *
+        # For backwards compatibility reasons, ground truth is placed before the *
+        ground_truth: Sequence[Dict[str, Union[Optional[str], bool]]] = None,
         *,
         metadata: Optional[dict] = None,
         dataset_id: str = None,
@@ -1553,7 +1554,7 @@ class Client:
         return self._make_request(requests.patch, f'/validations/{validation_id}', body=body)
 
     def delete_validation(self, validation_id: str) -> Dict:
-        """Delete the validation with the provided validation_id, calls the DELETE /validations/{validation_id} endpoint.
+        """Delete the validation defined by validation_id, calls the DELETE /validations/{validation_id} endpoint.
 
         >>> from cradl.client import Client
         >>> client = Client()

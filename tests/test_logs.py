@@ -1,4 +1,3 @@
-import pytest
 from cradl.client import Client
 
 from . import service

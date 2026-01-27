@@ -44,9 +44,12 @@ def assert_organization(response):
     assert 'monthlyNumberOfDocumentsCreated' in response, 'Missing monthlyNumberOfDocumentsCreated in response'
     assert 'monthlyNumberOfPredictionsAllowed' in response, 'Missing monthlyNumberOfPredictionsAllowed in response'
     assert 'monthlyNumberOfPredictionsCreated' in response, 'Missing monthlyNumberOfPredictionsCreated in response'
-    assert 'monthlyNumberOfTransitionExecutionsAllowed' in response, 'Missing monthlyNumberOfTransitionExecutionsAllowed in response'
-    assert 'monthlyNumberOfTransitionExecutionsCreated' in response, 'Missing monthlyNumberOfTransitionExecutionsCreated in response'
-    assert 'monthlyNumberOfWorkflowExecutionsAllowed' in response, 'Missing monthlyNumberOfWorkflowExecutionsAllowed in response'
-    assert 'monthlyNumberOfWorkflowExecutionsCreated' in response, 'Missing monthlyNumberOfWorkflowExecutionsCreated in response'
+    assert 'monthlyNumberOfTransitionExecutionsAllowed' in response, \
+        'Missing monthlyNumberOfTransitionExecutionsAllowed in response'
+    assert 'monthlyNumberOfTransitionExecutionsCreated' in response, \
+        'Missing monthlyNumberOfTransitionExecutionsCreated in response'
+    assert 'monthlyNumberOfWorkflowExecutionsAllowed' in response, \
+        'Missing monthlyNumberOfWorkflowExecutionsAllowed in response'
+    assert 'monthlyNumberOfWorkflowExecutionsCreated' in response, \
+        'Missing monthlyNumberOfWorkflowExecutionsCreated in response'
     assert 'monthlyUsageSummary' in response, 'Missing monthlyUsageSummary in response'
-
