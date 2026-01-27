@@ -1268,7 +1268,7 @@ class Client:
         """
         return self._make_request(requests.delete, f'/secrets/{secret_id}')
 
-    def create_user(self, email: str, *, role_ids = None, **optional_args) -> Dict:
+    def create_user(self, email: str, *, role_ids=None, **optional_args) -> Dict:
         """Creates a new user, calls the POST /users endpoint.
 
         >>> from cradl.client import Client
@@ -1424,7 +1424,6 @@ class Client:
         body.update(**optional_args)
         return self._make_request(requests.patch, f'/roles/{role_id}', body=body)
 
-
     def list_roles(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
         """List roles available, calls the GET /roles endpoint.
 
@@ -1537,7 +1536,7 @@ class Client:
         body.update(**optional_args)
         return self._make_request(requests.post, '/validations', body=body)
 
-    def update_validation(self, validation_id: str, *, config: dict = None, **optional_args ) -> Dict:
+    def update_validation(self, validation_id: str, *, config: dict = None, **optional_args) -> Dict:
         """Update the validation with the provided validation_id, calls the PATCH /validations/{validation_id} endpoint.
 
         :param validation_id: Id of the validation

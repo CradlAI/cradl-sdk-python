@@ -4,7 +4,7 @@ import time
 from base64 import b64decode
 from os.path import exists, expanduser
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -197,7 +197,7 @@ def guess_credentials(profile=None) -> Credentials:
     if profile:
         try:
             return Credentials(**read_from_file(profile=profile))
-        except:
+        except Exception:
             raise MissingCredentials(f'Could not find valid credentials for {profile} in ~/.cradl/credentials.json')
 
     for guesser in [read_from_environ, read_from_file]:
