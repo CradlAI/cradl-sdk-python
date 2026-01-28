@@ -24,4 +24,3 @@ def metadata():
 
 def assert_in_response(field, response):
     assert field in response, f'Missing {field} in response'
-    

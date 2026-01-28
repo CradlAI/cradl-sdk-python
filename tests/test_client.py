@@ -30,24 +30,25 @@ def test_invalid_credentials(
     client_with_access_token,
 ):
 
-    client = client_with_access_token
+    _client = client_with_access_token
     consent_id = service.create_consent_id()
     document_id = service.create_document_id()
     model_id = service.create_model_id()
+    api_endpoint = _client.credentials.api_endpoint
 
     with requests_mock.Mocker() as m:
-        m.post('/'.join([client.credentials.api_endpoint, 'documents']), status_code=error_code, content=error_content)
-        m.post('/'.join([client.credentials.api_endpoint, 'predictions']), status_code=error_code, content=error_content)
-        m.delete('/'.join([client.credentials.api_endpoint, 'documents']), status_code=error_code, content=error_content)
+        m.post('/'.join([api_endpoint, 'documents']), status_code=error_code, content=error_content)
+        m.post('/'.join([api_endpoint, 'predictions']), status_code=error_code, content=error_content)
+        m.delete('/'.join([api_endpoint, 'documents']), status_code=error_code, content=error_content)
 
         with pytest.raises(error_name):
-            client.create_document(content, consent_id=consent_id)
+            _client.create_document(content, consent_id=consent_id)
 
         with pytest.raises(error_name):
-            client.create_prediction(document_id, model_id)
+            _client.create_prediction(document_id, model_id)
 
         with pytest.raises(error_name):
-            client.delete_documents(consent_id=consent_id)
+            _client.delete_documents(consent_id=consent_id)
 
 
 @pytest.mark.parametrize('content', [

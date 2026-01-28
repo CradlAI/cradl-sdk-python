@@ -95,7 +95,7 @@ def test_update_document(static_client: Client, metadata):
 
     post_document_id_response = static_client.update_document(
         document_id,
-        ground_truth=ground_truth,
+        ground_truth=ground_truth,  # type: ignore
         dataset_id=service.create_dataset_id(),
         metadata=metadata,
     )

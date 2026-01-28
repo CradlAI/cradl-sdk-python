@@ -64,6 +64,7 @@ def mock_read_from_environ():
         'client_secret': 'foobar',
     }
 
+
 def equal_credentials(c0, c1):
     return all([
         c0.client_id == c1.client_id,
@@ -71,6 +72,7 @@ def equal_credentials(c0, c1):
         c0.auth_endpoint == c1.auth_endpoint,
         c0.api_endpoint == c1.api_endpoint,
     ])
+
 
 @pytest.mark.parametrize('section', ['default'])
 def test_guess_credentials(section, credentials_path):
@@ -121,6 +123,7 @@ def test_credentials_with_cache(cache_path, token, section):
     assert credentials._token == (token['access_token'], token['expires_in'])
     assert credentials.cached_profile == section
 
+
 @pytest.mark.parametrize('use_cache', [True])
 def test_read_from_file_with_cache(credentials_path, section, token, cache_path):
     write_token_to_cache(section, (token['access_token'], token['expires_in']), cache_path)
@@ -128,6 +131,7 @@ def test_read_from_file_with_cache(credentials_path, section, token, cache_path)
     credentials = Credentials(**args, cache_path=cache_path)
     assert credentials.cached_profile == section
     assert credentials._token == (token['access_token'], token['expires_in'])
+
 
 @pytest.mark.parametrize('use_cache', [False])
 def test_read_from_file_with_no_cache(credentials_path, section, token, cache_path):

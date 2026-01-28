@@ -8,12 +8,14 @@ from . import service, util
 
 
 @pytest.mark.parametrize('name_and_description', util.name_and_description_combinations())
+@pytest.mark.skip(reason='This resource is currently not intended to use in the new API')
 def test_create_secret(client: Client, name_and_description):
     data = {'username': 'foo', 'password': 'bar'}
     response = client.create_secret(data, **name_and_description)
     assert 'secretId' in response, 'Missing secretId in response'
 
 
+@pytest.mark.skip(reason='This resource is currently not intended to use in the new API')
 def test_list_secrets(client: Client):
     response = client.list_secrets()
     logging.info(response)
@@ -25,6 +27,7 @@ def test_list_secrets(client: Client):
     (random.randint(1, 100), 'foo'),
     (None, None),
 ])
+@pytest.mark.skip(reason='This resource is currently not intended to use in the new API')
 def test_list_secrets_with_pagination(client: Client, max_results, next_token):
     response = client.list_secrets(max_results=max_results, next_token=next_token)
     assert 'secrets' in response, 'Missing secrets in response'
@@ -32,6 +35,7 @@ def test_list_secrets_with_pagination(client: Client, max_results, next_token):
 
 
 @pytest.mark.parametrize('name_and_description', util.name_and_description_combinations())
+@pytest.mark.skip(reason='This resource is currently not intended to use in the new API')
 def test_update_secret(client: Client, name_and_description):
     secret_id = service.create_secret_id()
     data = {'username': 'foo', 'password': 'bar'}
@@ -39,8 +43,8 @@ def test_update_secret(client: Client, name_and_description):
     assert 'secretId' in response, 'Missing secretId in response'
 
 
+@pytest.mark.skip(reason='This resource is currently not intended to use in the new API')
 def test_delete_secret(client: Client):
     secret_id = service.create_secret_id()
     response = client.delete_secret(secret_id)
     assert 'secretId' in response, 'Missing secretId in response'
-

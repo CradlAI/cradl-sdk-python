@@ -1,0 +1,30 @@
+name: Run linter on PR
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  CheckLinting:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install uv
+        run: |
+          curl -Ls https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Create virtual environment and install dependencies
+        run: |
+          uv venv
+          source .venv/bin/activate
+          uv pip install -e ".[dev]"
+
+      - name: Lint
+        run: |
+          source .venv/bin/activate
+          make lint
+

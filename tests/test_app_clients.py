@@ -6,12 +6,14 @@ from cradl.client import Client
 from . import service, util
 
 
+@pytest.mark.skip(reason='This resource is currently not intended for use with the new API')
 @pytest.mark.parametrize('name_and_description', util.name_and_description_combinations())
 def test_create_app_client(client: Client, name_and_description):
     response = client.create_app_client(role_ids=[service.create_role_id()], **name_and_description)
     assert_app_client(response)
 
 
+@pytest.mark.skip(reason='This resource is currently not intended to use in the new API')
 @pytest.mark.parametrize('name_and_description', util.name_and_description_combinations())
 def test_create_app_client_without_secret(client: Client, name_and_description):
     response = client.create_app_client(
@@ -25,11 +27,13 @@ def test_create_app_client_without_secret(client: Client, name_and_description):
     assert_app_client(response)
 
 
+@pytest.mark.skip(reason='This resource is currently not intended to use in the new API')
 def test_list_app_clients(client: Client):
     response = client.list_app_clients()
     assert 'appClients' in response, 'Missing appClients in response'
 
 
+@pytest.mark.skip(reason='This resource is currently not intended to use in the new API')
 @pytest.mark.parametrize('max_results,next_token', [
     (random.randint(1, 100), None),
     (random.randint(1, 100), 'foo'),
@@ -41,12 +45,14 @@ def test_list_app_clients_with_pagination(client: Client, max_results, next_toke
     assert 'nextToken' in response, 'Missing nextToken in response'
 
 
+@pytest.mark.skip(reason='This resource is currently not intended to use in the new API')
 def test_delete_app_client(client: Client):
     app_client_id = service.create_app_client_id()
     response = client.delete_app_client(app_client_id)
     assert_app_client(response)
 
 
+@pytest.mark.skip(reason='This resource is currently not intended to use in the new API')
 @pytest.mark.parametrize('name_and_description', util.name_and_description_combinations(at_least_one=True))
 def test_update_app_client(client: Client, name_and_description):
     response = client.update_app_client(
@@ -63,8 +69,8 @@ def assert_app_client(response):
     assert 'description' in response, 'Missing description in response'
 
 
+@pytest.mark.skip(reason='This resource is currently not intended to use in the new API')
 def test_get_app_client(client: Client):
     app_client_id = service.create_app_client_id()
     response = client.get_app_client(app_client_id)
     assert_app_client(response)
-    
