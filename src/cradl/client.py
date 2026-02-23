@@ -33,9 +33,6 @@ def dictstrip(d):
     return {k: v for k, v in d.items() if v is not None}
 
 
-
-
-
 class Client:
     """A low level client to invoke api methods from Cradl."""
     def __init__(self, credentials: Optional[Credentials] = None, profile=None):
@@ -44,7 +41,7 @@ class Client:
         self.credentials = credentials or guess_credentials(profile)
 
     @exponential_backoff(TooManyRequestsException, max_tries=4)
-    @exponential_backoff(RequestException, max_tries=3, giveup=_fatal_code)
+    @exponential_backoff(RequestException, max_tries=3, giveup=fatal_code)
     def _make_request(
         self,
         requests_fn: Callable,
