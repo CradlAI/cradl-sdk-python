@@ -85,7 +85,7 @@ class Credentials:
         return access_token
 
     # Backoff on BadRequest since Kinde seems to sometimes give bogus 400 responses
-    @exponential_backoff(exceptions=(TooManyRequestsException, BadRequest), max_tries=4)
+    @exponential_backoff(exceptions=(TooManyRequestsException, BadRequest), max_tries=4)  # noqa
     @exponential_backoff(RequestException, max_tries=3, giveup=fatal_code)
     def _get_client_credentials(self) -> Tuple[str, int]:
         if any(endpoint in self.auth_endpoint for endpoint in ['auth.lucidtech.io', 'auth.cradl.ai', 'kinde.com']):

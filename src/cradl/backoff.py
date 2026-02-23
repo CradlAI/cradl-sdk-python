@@ -2,7 +2,7 @@ import functools
 import time
 from typing import Optional, Union, Type, Callable
 
-import requests
+import requests  # type: ignore
 from requests.exceptions import RequestException  # type: ignore
 
 
