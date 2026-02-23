@@ -3,19 +3,17 @@ import json
 from base64 import b64encode
 from datetime import datetime
 from pathlib import Path
-
 from typing import Callable, Dict, List, Optional, Sequence, Union
 from urllib.parse import urlparse, quote
 
 import requests  # type: ignore
 from requests.exceptions import RequestException  # type: ignore
 
-from .credentials import Credentials, guess_credentials
+from .backoff import exponential_backoff, fatal_code
 from .content import parse_content
+from .credentials import Credentials, guess_credentials
 from .log import setup_logging
-from .backoff import exponential_backoff
 from .response import decode_response, TooManyRequestsException, EmptyRequestError
-
 
 logger = setup_logging(__name__)
 Content = Union[bytes, bytearray, str, Path, io.IOBase]
@@ -35,12 +33,6 @@ def dictstrip(d):
     return {k: v for k, v in d.items() if v is not None}
 
 
-def _fatal_code(e: RequestException):
-    if isinstance(e.response, requests.Response) and isinstance(e.response.status_code, int):
-        return 400 <= e.response.status_code < 500
-    raise e
-
-
 class Client:
     """A low level client to invoke api methods from Cradl."""
     def __init__(self, credentials: Optional[Credentials] = None, profile=None):
@@ -49,7 +41,7 @@ class Client:
         self.credentials = credentials or guess_credentials(profile)
 
     @exponential_backoff(TooManyRequestsException, max_tries=4)
-    @exponential_backoff(RequestException, max_tries=3, giveup=_fatal_code)
+    @exponential_backoff(RequestException, max_tries=3, giveup=fatal_code)
     def _make_request(
         self,
         requests_fn: Callable,
@@ -81,7 +73,7 @@ class Client:
         return decode_response(response)
 
     @exponential_backoff(TooManyRequestsException, max_tries=4)
-    @exponential_backoff(RequestException, max_tries=3, giveup=_fatal_code)
+    @exponential_backoff(RequestException, max_tries=3, giveup=fatal_code)
     def _make_fileserver_request(
         self,
         requests_fn: Callable,

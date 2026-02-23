@@ -7,9 +7,11 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 import requests  # type: ignore
+from requests.exceptions import RequestException  # type: ignore
 
+from .backoff import exponential_backoff, fatal_code
 from .log import setup_logging
-
+from .response import TooManyRequestsException, BadRequest
 
 logger = setup_logging(__name__)
 NULL_TOKEN = '', 0
@@ -82,6 +84,9 @@ class Credentials:
 
         return access_token
 
+    # Backoff on BadRequest since Kinde seems to sometimes give bogus 400 responses
+    @exponential_backoff(exceptions=(TooManyRequestsException, BadRequest), max_tries=4)  # type: ignore
+    @exponential_backoff(RequestException, max_tries=3, giveup=fatal_code)
     def _get_client_credentials(self) -> Tuple[str, int]:
         if any(endpoint in self.auth_endpoint for endpoint in ['auth.lucidtech.io', 'auth.cradl.ai', 'kinde.com']):
             data = {

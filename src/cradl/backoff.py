@@ -2,6 +2,15 @@ import functools
 import time
 from typing import Optional, Union, Type, Callable
 
+import requests  # type: ignore
+from requests.exceptions import RequestException  # type: ignore
+
+
+def fatal_code(e: RequestException):
+    if isinstance(e.response, requests.Response) and isinstance(e.response.status_code, int):
+        return 400 <= e.response.status_code < 500
+    raise e
+
 
 def exponential_backoff(
     exceptions: Union[tuple[Type[Exception]], Type[Exception]],

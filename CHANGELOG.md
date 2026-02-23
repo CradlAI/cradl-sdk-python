@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.6.1 - 2026-02-23
+
+- Add exponential backoff to calls toward the auth endpoint
+
 ## Version 0.6.0 - 2026-01-27
 
 - Add update_validation method
