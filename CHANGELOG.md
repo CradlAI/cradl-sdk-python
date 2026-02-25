@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.6.2 - 2026-02-25
+
+- Add retry when auth endpoint does not provide scopes
+
 ## Version 0.6.1 - 2026-02-23
 
 - Add exponential backoff to calls toward the auth endpoint

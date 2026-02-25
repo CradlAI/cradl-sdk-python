@@ -21,6 +21,10 @@ class MissingCredentials(Exception):
     pass
 
 
+class MissingScope(Exception):
+    pass
+
+
 class Credentials:
     """Used to fetch and store credentials and to generate/cache an access token.
 
@@ -86,7 +90,7 @@ class Credentials:
 
     # Backoff on BadRequest since Kinde seems to sometimes give bogus 400 responses
     @exponential_backoff(exceptions=(TooManyRequestsException, BadRequest), max_tries=4)  # type: ignore
-    @exponential_backoff(RequestException, max_tries=3, giveup=fatal_code)
+    @exponential_backoff(exceptions=(RequestException, MissingScope), max_tries=3, giveup=fatal_code)  # type: ignore
     def _get_client_credentials(self) -> Tuple[str, int]:
         if any(endpoint in self.auth_endpoint for endpoint in ['auth.lucidtech.io', 'auth.cradl.ai', 'kinde.com']):
             data = {
@@ -105,7 +109,13 @@ class Credentials:
         response.raise_for_status()
 
         response_data = response.json()
-        return response_data['access_token'], time.time() + response_data['expires_in']
+        token = response_data['access_token']
+
+        _, payload, _ = token.split('.')
+        if not json.loads(b64decode(payload)).get('scope'):
+            raise MissingScope
+
+        return token, time.time() + response_data['expires_in']
 
 
 def read_token_from_cache(cached_profile: str, cache_path: Path):
