@@ -21,7 +21,7 @@ class MissingCredentials(Exception):
     pass
 
 
-class MissingScope(Exception):
+class MissingClaims(Exception):
     pass
 
 
@@ -90,7 +90,7 @@ class Credentials:
 
     # Backoff on BadRequest since Kinde seems to sometimes give bogus 400 responses
     @exponential_backoff(exceptions=(TooManyRequestsException, BadRequest), max_tries=4)  # type: ignore
-    @exponential_backoff(exceptions=(RequestException, MissingScope), max_tries=3, giveup=fatal_code)  # type: ignore
+    @exponential_backoff(exceptions=(RequestException, MissingClaims), max_tries=3, giveup=fatal_code)  # type: ignore
     def _get_client_credentials(self) -> Tuple[str, int]:
         if any(endpoint in self.auth_endpoint for endpoint in ['auth.lucidtech.io', 'auth.cradl.ai', 'kinde.com']):
             data = {
@@ -112,8 +112,9 @@ class Credentials:
         token = response_data['access_token']
 
         _, payload, _ = token.split('.')
-        if not json.loads(b64decode(payload)).get('scope'):
-            raise MissingScope
+        claims = json.loads(b64decode(payload))
+        if not all([claims.get(key) for key in ['external_app_client_id', 'external_organization_id', 'scope']]):
+            raise MissingClaims
 
         return token, time.time() + response_data['expires_in']
 

@@ -1,4 +1,6 @@
+import json
 import string
+from base64 import b64encode
 from os import urandom
 from random import choice, randint
 
@@ -9,8 +11,21 @@ from requests_mock import Mocker
 
 @pytest.fixture(scope='session')
 def token():
+    header = b64encode(json.dumps({
+        'alg': 'RS256',
+        'kid': 'ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff',
+        'typ': 'JWT'
+    }).encode()).decode()
+
+    claims = b64encode(json.dumps({
+        'external_app_client_id': 'cradl:app-client:00000000000000000000000000000000',
+        'external_organization_id': 'cradl:organization:00000000000000000000000000000000',
+        'scope': 'actions: read actions:write',
+    }).encode()).decode()
+
+    signature = ''.join(choice(string.ascii_uppercase) for _ in range(randint(50, 50))) #invalid
     return {
-        'access_token': ''.join(choice(string.ascii_uppercase) for _ in range(randint(50, 50))),
+        'access_token': '.'.join([header, claims, signature]),
         'expires_in': 123456789,
     }
 
