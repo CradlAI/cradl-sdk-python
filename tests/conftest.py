@@ -23,7 +23,7 @@ def token():
         'scope': 'actions: read actions:write',
     }).encode()).decode()
 
-    signature = ''.join(choice(string.ascii_uppercase) for _ in range(randint(50, 50))) #invalid
+    signature = ''.join(choice(string.ascii_uppercase) for _ in range(randint(50, 50)))  # invalid
     return {
         'access_token': '.'.join([header, claims, signature]),
         'expires_in': 123456789,
