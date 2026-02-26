@@ -92,7 +92,8 @@ class Credentials:
     @exponential_backoff(exceptions=(TooManyRequestsException, BadRequest), max_tries=4)  # type: ignore
     @exponential_backoff(exceptions=(RequestException, MissingClaims), max_tries=3, giveup=fatal_code)  # type: ignore
     def _get_client_credentials(self) -> Tuple[str, int]:
-        if any(endpoint in self.auth_endpoint for endpoint in ['auth.lucidtech.io', 'auth.cradl.ai', 'kinde.com']):
+        get_credentials_from_kinde = any(endpoint in self.auth_endpoint for endpoint in ['auth.lucidtech.io', 'auth.cradl.ai', 'kinde.com'])
+        if get_credentials_from_kinde:
             data = {
                 'client_id': self.client_id,
                 'client_secret': self.client_secret,
@@ -111,10 +112,12 @@ class Credentials:
         response_data = response.json()
         token = response_data['access_token']
 
-        _, payload, _ = token.split('.')
-        claims = json.loads(b64decode(payload))
-        if not all([claims.get(key) for key in ['external_app_client_id', 'external_organization_id', 'scope']]):
-            raise MissingClaims
+        if get_credentials_from_kinde:
+            # Confirm that Kinde has provided necessary claims
+            _, payload, _ = token.split('.')
+            claims = json.loads(b64decode(payload))
+            if not all([claims.get(key) for key in ['external_app_client_id', 'external_organization_id', 'scope']]):
+                raise MissingClaims
 
         return token, time.time() + response_data['expires_in']
 
