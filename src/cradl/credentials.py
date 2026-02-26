@@ -92,7 +92,9 @@ class Credentials:
     @exponential_backoff(exceptions=(TooManyRequestsException, BadRequest), max_tries=4)  # type: ignore
     @exponential_backoff(exceptions=(RequestException, MissingClaims), max_tries=3, giveup=fatal_code)  # type: ignore
     def _get_client_credentials(self) -> Tuple[str, int]:
-        get_credentials_from_kinde = any(endpoint in self.auth_endpoint for endpoint in ['auth.lucidtech.io', 'auth.cradl.ai', 'kinde.com'])
+        get_credentials_from_kinde = any(
+            endpoint in self.auth_endpoint for endpoint in ['auth.lucidtech.io', 'auth.cradl.ai', 'kinde.com']
+        )
         if get_credentials_from_kinde:
             data = {
                 'client_id': self.client_id,
