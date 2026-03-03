@@ -117,7 +117,8 @@ class Credentials:
         if get_credentials_from_kinde:
             # Confirm that Kinde has provided necessary claims
             _, payload, _ = token.split('.')
-            claims = json.loads(b64decode(payload))
+            padding = '=' * (len(payload) % 4)
+            claims = json.loads(b64decode(payload + padding))
             if not all([claims.get(key) for key in ['external_app_client_id', 'external_organization_id', 'scope']]):
                 raise MissingClaims
 
