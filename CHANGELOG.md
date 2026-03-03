@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.6.3 - 2026-03-03
+
+- Bugfix for Kinde claims check
+
 ## Version 0.6.2 - 2026-02-25
 
 - Add retry when auth endpoint does not provide scopes
