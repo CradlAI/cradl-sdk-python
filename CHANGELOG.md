@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.6.7 - 2026-09-14
+
+- Fix error handling for TooManyRequests and Forbidden errors
+
 ## Version 0.6.6 - 2026-04-22
 
 - Get predictions with correct output format in `create_prediction` and `get_prediction`
