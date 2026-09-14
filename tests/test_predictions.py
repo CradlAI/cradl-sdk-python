@@ -21,10 +21,10 @@ from . import service
     None,
 ])
 @pytest.mark.parametrize('run_async', [True, False, None])
-def test_create_prediction(client: Client, preprocess_config, postprocess_config, run_async):
+def test_create_prediction(static_client: Client, preprocess_config, postprocess_config, run_async):
     document_id = service.create_document_id()
     model_id = service.create_model_id()
-    response = client.create_prediction(
+    response = static_client.create_prediction(
         document_id,
         model_id,
         preprocess_config=dictstrip(preprocess_config) if preprocess_config else None,
@@ -44,8 +44,8 @@ def test_list_predictions(client: Client, sort_by, order, model_id):
 
 
 @pytest.mark.parametrize('prediction_id', [service.create_prediction_id(), None])
-def test_get_prediction(client: Client, prediction_id):
-    response = client.get_prediction(prediction_id)
+def test_get_prediction(static_client: Client, prediction_id):
+    response = static_client.get_prediction(prediction_id)
     logging.info(response)
     assert 'predictionId' in response, 'Missing prediction in response'
     assert 'inferenceTime' in response, 'Missing inferenceTime in response'

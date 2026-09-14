@@ -4,6 +4,18 @@
 
 - Fix `decode_response` matching `TooManyRequestsException`/`LimitExceededException`/`InvalidCredentialsException` against the `message` field using substring matching instead of exact equality against `response.json().values()`. This was silently broken whenever the API wrapped the message (e.g. `"[Forbidden] Too Many Requests"`), causing a plain `requests.exceptions.HTTPError` to be raised instead, which bypassed the `TooManyRequestsException` retry/backoff in `Client._make_request`.
 
+## Version 0.6.6 - 2026-04-22
+
+- Get predictions with correct output format in `create_prediction` and `get_prediction`
+
+## Version 0.6.5 - 2026-04-21
+
+- Get predictions if needed from fileserver for `create_prediction` and `get_prediction`
+
+## Version 0.6.4 - 2026-04-20
+
+- Bugfix for backoff in credentials
+
 ## Version 0.6.3 - 2026-03-03
 
 - Bugfix for Kinde claims check

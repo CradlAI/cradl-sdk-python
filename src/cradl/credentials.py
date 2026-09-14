@@ -11,7 +11,7 @@ from requests.exceptions import RequestException  # type: ignore
 
 from .backoff import exponential_backoff, fatal_code
 from .log import setup_logging
-from .response import TooManyRequestsException, BadRequest
+from .response import TooManyRequestsException, BadRequest, decode_response
 
 logger = setup_logging(__name__)
 NULL_TOKEN = '', 0
@@ -109,9 +109,7 @@ class Credentials:
             auth = requests.auth.HTTPBasicAuth(self.client_id, self.client_secret)
             response = requests.post(url, headers=headers, auth=auth)
 
-        response.raise_for_status()
-
-        response_data = response.json()
+        response_data = decode_response(response)
         token = response_data['access_token']
 
         if get_credentials_from_kinde:

@@ -1060,7 +1060,17 @@ class Client:
             'async': run_async,
             'agentRunId': agent_run_id,
         }
-        return self._make_request(requests.post, '/predictions', body=dictstrip(body))
+        prediction = self._make_request(requests.post, '/predictions', body=dictstrip(body))
+        predictions_format = prediction['postprocessConfig'].get('outputFormat')
+
+        if prediction['status'] == 'succeeded' and prediction.get('predictions') is None:
+            prediction['predictions'] = json.loads(self._make_fileserver_request(
+                requests_fn=requests.get,
+                file_url=prediction['fileUrl'],
+                query_params={'predictionsFormat': predictions_format} if predictions_format else {},
+            ).decode())
+
+        return prediction
 
     def list_predictions(
         self,
@@ -1117,7 +1127,17 @@ class Client:
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-        return self._make_request(requests.get, f'/predictions/{prediction_id}')
+        prediction = self._make_request(requests.get, f'/predictions/{prediction_id}')
+        predictions_format = prediction['postprocessConfig'].get('outputFormat')
+
+        if prediction['status'] == 'succeeded' and prediction.get('predictions') is None:
+            prediction['predictions'] = json.loads(self._make_fileserver_request(
+                requests_fn=requests.get,
+                file_url=prediction['fileUrl'],
+                query_params={'predictionsFormat': predictions_format} if predictions_format else {},
+            ).decode())
+
+        return prediction
 
     def get_plan(self, plan_id: str) -> Dict:
         """Get information about a specific plan, calls the GET /plans/{plan_id} endpoint.
