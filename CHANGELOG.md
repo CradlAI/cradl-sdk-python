@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.6.7 - 2026-09-14
+
+- Fix `decode_response` matching `TooManyRequestsException`/`LimitExceededException`/`InvalidCredentialsException` against the `message` field using substring matching instead of exact equality against `response.json().values()`. This was silently broken whenever the API wrapped the message (e.g. `"[Forbidden] Too Many Requests"`), causing a plain `requests.exceptions.HTTPError` to be raised instead, which bypassed the `TooManyRequestsException` retry/backoff in `Client._make_request`.
+
 ## Version 0.6.3 - 2026-03-03
 
 - Bugfix for Kinde claims check
