@@ -32,7 +32,7 @@ jobs:
       - name: Start prism
         run: |
           make prism-start
-          sleep 3
+          timeout 60 sh -c 'until curl -s -o /dev/null http://127.0.0.1:4010; do sleep 1; done'
 
       - name: Run tests
         run: |
