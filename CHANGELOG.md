@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.6.8 - 2026-10-26
+
+- Update dependencies to resolve Dependabot security alerts
+
 ## Version 0.6.7 - 2026-09-14
 
 - Fix error handling for TooManyRequests and Forbidden errors
