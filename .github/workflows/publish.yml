@@ -5,15 +5,18 @@ name: Upload Python Package
 on:
   workflow_dispatch
 
+permissions:
+  contents: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7.0.1
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v7.1.0
         with:
           python-version: '3.x'
 

@@ -2,9 +2,14 @@ name: Check Markdown links
 
 on: push
 
+permissions:
+  contents: read
+
 jobs:
   markdown-link-check:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@master
-    - uses: gaurav-nelson/github-action-markdown-link-check@v1
+    - uses: actions/checkout@v7.0.1
+      with:
+        persist-credentials: false
+    - uses: tcort/github-action-markdown-link-check@v1.1.2
