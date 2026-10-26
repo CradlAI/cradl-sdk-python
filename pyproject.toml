@@ -1,6 +1,6 @@
 [project]
 name = "cradl"
-version = "0.6.7"
+version = "0.6.8"
 description = "Python SDK for Cradl"
 authors = [{ name = "Cradl", email = "hello@cradl.ai" }]
 readme = "README.md"
@@ -8,7 +8,7 @@ requires-python = ">=3.10"
 license = {text = "Apache 2.0"}
 dependencies = [
     "filetype>=1.2.0",
-    "requests (>=2.31.0)",
+    "requests (>=2.33.0)",
 ]
 
 [project.urls]
@@ -31,5 +31,20 @@ dev = [
     "pytest>=8.3.5",
     "pytest-env>=1.1.5",
     "requests-mock>=1.12.1",
-    "tox>=4.25.0",
 ]
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "-s"
+markers = ["integration: requires access to API"]
+env = [
+    "CRADL_CLIENT_ID=test",
+    "CRADL_CLIENT_SECRET=test",
+    "CRADL_AUTH_ENDPOINT=test",
+    "CRADL_API_ENDPOINT=http://127.0.0.1:4010",
+]
+
+[tool.isort]
+multi_line_output = 3

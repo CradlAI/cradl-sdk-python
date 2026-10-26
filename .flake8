@@ -1,3 +1,3 @@
-exclude = venv* .tox .env .eggs
+[flake8]
+exclude = venv* .venv .env .eggs
 max-line-length = 120
-

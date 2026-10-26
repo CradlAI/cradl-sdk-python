@@ -1,5 +1,12 @@
 # Changelog
 
+## Version 0.6.8 - 2026-10-26
+
+- Update dependencies to resolve Dependabot security alerts
+- Require `requests>=2.33.0` to exclude versions with known vulnerabilities
+- Drop tox and `poetry.lock`; use uv and `uv.lock` for development, CI and publishing
+- Publish to PyPI with trusted publishing
+
 ## Version 0.6.7 - 2026-09-14
 
 - Fix error handling for TooManyRequests and Forbidden errors
