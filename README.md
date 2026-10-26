@@ -11,7 +11,9 @@ $ pip install cradl
 ## Usage
 
 Sign up for free [here](https://app.cradl.ai/signup) and download API credentials to use this SDK.
-Read more about authenticating to the API [here](https://docs.cradl.ai/api-reference/introduction#authentication)
+Read more about authenticating to the API [here](https://docs.cradl.ai/api-reference/introduction#authentication).
+The client uses the `CRADL_CLIENT_ID`, `CRADL_CLIENT_SECRET`, `CRADL_AUTH_ENDPOINT` and `CRADL_API_ENDPOINT`
+environment variables if all of them are set, and otherwise reads credentials from `~/.cradl/credentials.json`.
 
 ### Quick start
 
@@ -31,14 +33,22 @@ print(json.dumps(prediction, indent=2))
 
 ### Prerequisites
 
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and Docker (used to run a mock of the API), then install the dependencies:
+
 ```bash
-$ pip install -r requirements.txt
-$ pip install -r requirements.ci.txt
+$ uv sync --extra dev
+```
+
+### Lint
+
+```bash
+$ make lint
 ```
 
 ### Run tests
 
 ```bash
 $ make prism-start
-$ python -m pytest
+$ make test
+$ make prism-stop
 ```
