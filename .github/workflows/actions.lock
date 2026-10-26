@@ -11,7 +11,6 @@ workflows:
         - 'astral-sh/setup-uv@v10.3.2'
     '.github/workflows/pipeline.yml':
         - 'actions/checkout@v7.0.1'
-        - 'actions/setup-python@v7.1.0'
         - 'astral-sh/setup-uv@v10.3.2'
     '.github/workflows/publish.yml':
         - 'actions/checkout@v7.0.1'

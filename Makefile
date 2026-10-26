@@ -2,12 +2,13 @@ CID := $(shell cat /tmp/prism.cid)
 
 .PHONY: lint
 lint:
-	tox -e lint
+	uv run --extra dev flake8 src tests
+	uv run --extra dev mypy src tests
 
 .PHONY: test
 test:
 	@echo "Running test suite..."
-	tox -e py
+	uv run --extra dev pytest
 
 .PHONY: prism-start
 prism-start:
@@ -31,4 +32,5 @@ endif
 
 .PHONY: publish
 publish:
-	tox -e publish
+	uv build
+	uvx twine upload dist/*
