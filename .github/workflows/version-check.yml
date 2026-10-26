@@ -3,6 +3,10 @@ name: Check that version is updated
 on:
   pull_request:
     branches: [ master ]
+    # Only changes to what ships in the package need a new version
+    paths:
+      - 'src/**'
+      - 'pyproject.toml'
 
 permissions:
   contents: read
@@ -20,7 +24,7 @@ jobs:
 
       - name: Version check
         run: |
-          if [ -z $(git diff origin/master HEAD -- pyproject.toml | grep version )]
+          if ! git diff origin/master HEAD -- pyproject.toml | grep -q '^+version'
           then
             echo "You should probably update version number"
             exit 1
