@@ -1144,4 +1144,4 @@ dev = ["flake8", "mypy", "pytest", "pytest-env", "requests-mock", "tox"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10"
-content-hash = "e50da3c45949578e58ab88e140db0c7dbe03c73d4000e11a68e047d8641eb5a7"
+content-hash = "ebbf5fb3bb10dbdaee73928b57cc12e9c1621be16578ca9c541f877cbcecaaaf"

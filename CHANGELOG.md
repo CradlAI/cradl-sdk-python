@@ -3,6 +3,7 @@
 ## Version 0.6.8 - 2026-10-26
 
 - Update dependencies to resolve Dependabot security alerts
+- Require `requests>=2.33.0` to exclude versions with known vulnerabilities
 
 ## Version 0.6.7 - 2026-09-14
 
