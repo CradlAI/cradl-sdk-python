@@ -33,4 +33,4 @@ endif
 .PHONY: publish
 publish:
 	uv build
-	uvx twine upload dist/*
+	uv publish
