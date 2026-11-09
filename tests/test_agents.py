@@ -77,20 +77,21 @@ def test_update_agent_with_resource_ids_is_deprecated(client: Client):
     ('create_validation', {}),
 ])
 def test_a_resource_is_created_for_an_agent(client: Client, monkeypatch, create, args):
-    """The agentId the request has, checked on the request itself: the mock API's specification predates agentId"""
+    """Sent as agentId, which the mock API's specification validates; without agent_id, a standalone resource"""
     sent = []
+    make_request = client._make_request
 
-    def make_request(requests_fn, path, body=None, **_):
+    def recorded(requests_fn, path, body=None, **kwargs):
         sent.append(body)
-        return {}
-    monkeypatch.setattr(client, '_make_request', make_request)
+        return make_request(requests_fn, path, body=body, **kwargs)
+    monkeypatch.setattr(client, '_make_request', recorded)
     agent_id = service.create_agent_id()
 
     getattr(client, create)(**args, agent_id=agent_id)
     getattr(client, create)(**args)
 
     assert sent[0]['agentId'] == agent_id
-    assert 'agentId' not in sent[1]  # a standalone resource
+    assert 'agentId' not in sent[1]
 
 
 def test_delete_agent(client: Client):
