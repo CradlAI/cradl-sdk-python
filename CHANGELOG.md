@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 0.6.9 - 2026-11-09
+
+- `agent_id` in `create_action`, `create_hook`, `create_model` and `create_validation`: the resource belongs to that agent from the start
+- `resource_ids` in `create_agent` and `update_agent` is deprecated, and warns: create the resources with `agent_id` instead
+- Update development dependencies (mypy 2.4.1, pytest 9.2.0) and `astral-sh/setup-uv` 10.3.3 in CI
+
 ## Version 0.6.8 - 2026-10-26
 
 - Update dependencies to resolve Dependabot security alerts
