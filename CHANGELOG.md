@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 0.6.9 - 2026-11-09
+
+- `agent_id` in `create_action`, `create_hook`, `create_model` and `create_validation`: the resource belongs to that agent from the start
+- `resource_ids` in `create_agent` and `update_agent` is deprecated, and warns: create the resources with `agent_id` instead
+
 ## Version 0.6.8 - 2026-10-26
 
 - Update dependencies to resolve Dependabot security alerts

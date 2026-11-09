@@ -1,5 +1,6 @@
 import io
 import json
+import warnings
 from base64 import b64encode
 from datetime import datetime
 from pathlib import Path
@@ -31,6 +32,14 @@ def datetimestr(d: Optional[Union[str, datetime]]) -> Optional[str]:
 def dictstrip(d):
     """Given a dict, return the dict with keys mapping to falsey values removed."""
     return {k: v for k, v in d.items() if v is not None}
+
+
+def _warn_resource_ids():
+    warnings.warn(
+        'resource_ids is deprecated: create the resources with agent_id, which makes them the agent\'s',
+        DeprecationWarning,
+        stacklevel=3,
+    )
 
 
 class Client:
@@ -737,6 +746,7 @@ class Client:
         description: Optional[str] = None,
         metadata: Optional[dict] = None,
         base_model: Optional[dict] = None,
+        agent_id: Optional[str] = None,
         **optional_args,
     ) -> Dict:
         """Creates a model, calls the POST /models endpoint.
@@ -783,6 +793,9 @@ class Client:
         :param base_model: Specify which model to use as base model. Example: \
 {"organizationId": "cradl:organization:cradl", "modelId": "cradl:model:invoice"}
         :type base_model: dict, optional
+        :param agent_id: Id of the agent the model belongs to: one of the agent's resources from the start,\
+ until it's deleted
+        :type agent_id: str, optional
         :return: Model response from REST API
         :rtype: dict
 
@@ -796,6 +809,7 @@ class Client:
             }
 
         body = dictstrip({
+            'agentId': agent_id,
             'width': width,
             'height': height,
             'fieldConfig': field_config,
@@ -1523,6 +1537,7 @@ class Client:
         *,
         config: Optional[dict] = None,
         metadata: Optional[dict] = None,
+        agent_id: Optional[str] = None,
         **optional_args,
     ) -> Dict:
 
@@ -1536,6 +1551,9 @@ class Client:
         :type config: dict, optional
         :param metadata: Dictionary that can be used to store additional information
         :type metadata: dict, optional
+        :param agent_id: Id of the agent the validation belongs to: one of the agent's resources from the start,\
+ until it's deleted
+        :type agent_id: str, optional
         :return: Dataset response from REST API
         :rtype: dict
 
@@ -1543,6 +1561,7 @@ class Client:
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
+            'agentId': agent_id,
             'config': config,
             'metadata': metadata,
         })
@@ -1719,7 +1738,8 @@ class Client:
         :type description: str, optional
         :param metadata: Dictionary that can be used to store additional information
         :type metadata: dict, optional
-        :param resource_ids: List of resource ids for hooks, actions and validations in the agent
+        :param resource_ids: Deprecated: create the agent's hooks, actions, models and validations with \
+``agent_id`` instead. Resources listed here are added to the agent; leaving one out doesn't remove it
         :type resource_ids: list[str], optional
         :return: Agent response from REST API
         :rtype: dict
@@ -1727,6 +1747,8 @@ class Client:
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
+        if resource_ids is not None:
+            _warn_resource_ids()
         body = dictstrip({
             'description': description,
             'metadata': metadata,
@@ -1766,7 +1788,8 @@ class Client:
         :type description: str, optional
         :param metadata: Dictionary that can be used to store additional information
         :type metadata: dict, optional
-        :param resource_ids: List of resource ids for hooks, actions and validations in the agent
+        :param resource_ids: Deprecated: create the agent's hooks, actions, models and validations with \
+``agent_id`` instead. Resources listed here are added to the agent; leaving one out doesn't remove it
         :type resource_ids: list[str], optional
         :return: Agent response from REST API
         :rtype: dict
@@ -1774,6 +1797,8 @@ class Client:
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
+        if resource_ids is not None:
+            _warn_resource_ids()
         body = dictstrip({
             'metadata': metadata,
             'resourceIds': resource_ids,
@@ -1982,6 +2007,7 @@ class Client:
         false_action_id: Optional[str] = None,
         metadata: Optional[dict] = None,
         name: Optional[str] = None,
+        agent_id: Optional[str] = None,
     ) -> Dict:
 
         """Create hook, calls the POST /hooks endpoint.
@@ -2004,6 +2030,9 @@ class Client:
         :type metadata: dict, optional
         :param false_action_id: Id of the action that will happen when hook run evaluates to false
         :type false_action_id: str, optional
+        :param agent_id: Id of the agent the hook belongs to: one of the agent's resources from the start,\
+ until it's deleted
+        :type agent_id: str, optional
         :return: Hook response from REST API
         :rtype: dict
 
@@ -2011,6 +2040,7 @@ class Client:
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
+            'agentId': agent_id,
             'config': config,
             'description': description,
             'enabled': enabled,
@@ -2189,6 +2219,7 @@ class Client:
         metadata: Optional[dict] = None,
         name: Optional[str] = None,
         secret_id: Optional[str] = None,
+        agent_id: Optional[str] = None,
     ) -> Dict:
 
         """Create action, calls the POST /actions endpoint.
@@ -2207,6 +2238,9 @@ class Client:
         :type metadata: dict, optional
         :param secret_id: Id of the secret to expand as input to functionId
         :type secret_id: str, optional
+        :param agent_id: Id of the agent the action belongs to: one of the agent's resources from the start,\
+ until it's deleted
+        :type agent_id: str, optional
         :return: Action response from REST API
         :rtype: dict
 
@@ -2214,6 +2248,7 @@ class Client:
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         body = dictstrip({
+            'agentId': agent_id,
             'config': config,
             'description': description,
             'enabled': enabled,
