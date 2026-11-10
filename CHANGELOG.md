@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 0.7.0 - Unreleased
+## Version 0.7.0 - 2026-11-10
 
 - Agent, model and function versions: `create_*_version` publishes one, `list_*_versions` lists them
 - Aliases: `set_*_alias` creates an alias or moves it to a version, and `get_*_alias`, `list_*_aliases` and `delete_*_alias`
