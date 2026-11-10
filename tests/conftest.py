@@ -76,3 +76,18 @@ def content():
 @pytest.fixture(scope='session')
 def pdf_content():
     yield 'HTTP/1.0 200 OK%PDF-1.4 %½¾¼µ %%EOF'.encode()
+
+
+@pytest.fixture
+def sent(client, monkeypatch):
+    """
+    The client's requests, recorded instead of sent, for endpoints and fields the mock API's specification doesn't have
+    yet: (method, path, body, params) for each, answered with {}
+    """
+    requests_sent = []
+
+    def record(requests_fn, path, body=None, params=None, **kwargs):
+        requests_sent.append((requests_fn.__name__.upper(), path, body, params))
+        return {}
+    monkeypatch.setattr(client, '_make_request', record)
+    return requests_sent

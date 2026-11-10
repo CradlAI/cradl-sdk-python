@@ -22,6 +22,18 @@ def test_update_organization(client: Client, name_and_description):
     assert_organization(response)
 
 
+def test_list_organizations(client: Client):
+    response = client.list_organizations(max_results=10)
+    assert 'organizations' in response, 'Missing organizations in response'
+    for organization in response['organizations']:
+        assert_organization(organization)
+
+
+def test_create_organization(client: Client):
+    response = client.create_organization(name='Test organization', description='A test organization')
+    assert_organization(response)
+
+
 def assert_organization(response):
     assert 'organizationId' in response, 'Missing organizationId in response'
     assert 'name' in response, 'Missing name in response'

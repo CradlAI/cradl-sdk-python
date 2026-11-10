@@ -54,6 +54,11 @@ def test_update_hook(client: Client):
     assert_hook(hook)
 
 
+def test_update_hook_function(client: Client):
+    hook = client.update_hook(service.create_hook_id(), function_id=service.create_function_id())
+    assert_hook(hook)
+
+
 def test_delete_hook(client: Client):
     hook_id = service.create_hook_id()
     hook = client.delete_hook(hook_id)

@@ -1,5 +1,24 @@
 # Changelog
 
+## Version 0.7.0 - Unreleased
+
+Release after the API's versioning changes are deployed: the versions, aliases and environments endpoints, and
+`deleteResources`, aren't in the API before that.
+
+- Agent, model and function versions: `create_*_version` publishes one, `list_*_versions` lists them
+- Aliases: `set_*_alias` creates an alias or moves it to a version, and `get_*_alias`, `list_*_aliases` and `delete_*_alias`
+- `get_agent`, `get_model`, `get_function`, `create_agent_run` and `get_agent_graph` take qualified ids: `<id>:3`, `<id>:@prod` or `<id>:$latest`
+- `update_agent` takes `environments` and `draft_environment_id`, and `set_agent_alias` an `environment_id`
+- `delete_agent(delete_resources=True)` also deletes the agent's hooks, actions, models and validations
+- Functions: `list_functions`, `create_function` (uploads the code given as `content`), `get_function` (`get_content=True` for the code), `update_function` and `delete_function`
+- `get_agent_graph` and `update_agent_graph`, `list_organizations` and `create_organization`, and `create_hook_run`
+- `create_agent_run` takes `trigger_id`, and `list_agent_runs` takes `status`, `sort` and created and updated time ranges
+- `list_actions`, `list_hooks`, `list_models`, `list_validations`, `list_functions` and `list_documents` get resources by id: `action_id=[...]` etc.
+- `update_hook` takes `function_id`
+- Ids are quoted in request paths, so an id naming its organization (`cradl:organization:cradl/cradl:function:...`) works
+- **Breaking:** `resource_ids` is removed from `create_agent` and `update_agent`, which the API rejects: create resources with `agent_id`
+- **Breaking:** Python 3.10 is no longer supported; Python 3.11 to 3.15 are
+
 ## Version 0.6.9 - 2026-11-09
 
 - `agent_id` in `create_action`, `create_hook`, `create_model` and `create_validation`: the resource belongs to that agent from the start
