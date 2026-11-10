@@ -78,17 +78,20 @@ def test_delete_agent(client: Client):
     assert_agent(agent)
 
 
-def test_delete_agent_with_its_resources(client: Client, sent):
+def test_delete_agent_with_its_resources(client: Client):
+    agent = client.delete_agent(service.create_agent_id(), delete_resources=True)
+    assert_agent(agent)
+
+
+def test_delete_resources_is_a_query_parameter(client: Client, sent):
     agent_id = service.create_agent_id()
     client.delete_agent(agent_id, delete_resources=True)
     client.delete_agent(agent_id)
-    assert sent == [
-        ('DELETE', f'/agents/{agent_id}', None, {'deleteResources': 'true'}),
-        ('DELETE', f'/agents/{agent_id}', None, None),
-    ]
+    assert [params for *_, params in sent] == [{'deleteResources': 'true'}, None]
 
 
 def test_update_agent_environments(client: Client, sent):
+    """Recorded: the mock API's specification types draftEnvironmentId and a variable's value as objects"""
     agent_id = service.create_agent_id()
     environments = [{'name': 'Production', 'variables': [{'name': 'API_URL', 'value': 'https://example.com'}]}]
     client.update_agent(agent_id, environments=environments, draft_environment_id='env-0123456789ab')

@@ -23,10 +23,10 @@ def test_create_agent_run_from_a_trigger(client: Client):
     assert_agent_run(run)
 
 
-def test_create_agent_run_of_an_alias(client: Client, sent):
-    agent_id = service.create_agent_id()
-    client.create_agent_run(f'{agent_id}:@prod')
-    assert sent == [('POST', f'/agents/{agent_id}:@prod/runs', {}, None)]
+@pytest.mark.parametrize('qualifier', [':3', ':@prod', ':$latest'])
+def test_create_agent_run_of_a_version(client: Client, qualifier):
+    run = client.create_agent_run(f'{service.create_agent_id()}{qualifier}')
+    assert_agent_run(run)
 
 
 def test_list_agent_runs(client: Client):

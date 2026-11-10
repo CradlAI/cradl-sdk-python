@@ -134,6 +134,8 @@ class Client:
         :type default_login_url: str
         :param role_ids: List of roles to assign appClient
         :type role_ids: str, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
         :return: AppClient response from REST API
         :rtype: dict
 
@@ -189,7 +191,14 @@ class Client:
         }
         return self._make_request(requests.get, '/appClients', params=params)
 
-    def update_app_client(self, app_client_id, **optional_args) -> Dict:
+    def update_app_client(
+        self,
+        app_client_id,
+        *,
+        login_urls: Optional[List[str]] = None,
+        default_login_url: Optional[str] = None,
+        **optional_args,
+    ) -> Dict:
         """Updates an appClient, calls the PATCH /appClients/{appClientId} endpoint.
 
         :param app_client_id: Id of the appClient
@@ -202,6 +211,10 @@ class Client:
         :type description: str, optional
         :param role_ids: List of roles to assign appClient
         :type role_ids: str, optional
+        :param login_urls: List of login urls
+        :type login_urls: List[str], optional
+        :param default_login_url: Default login url
+        :type default_login_url: str, optional
         :return: AppClient response from REST API
         :rtype: dict
 
@@ -211,7 +224,8 @@ class Client:
         if 'role_ids' in optional_args:
             optional_args['roleIds'] = optional_args.pop('role_ids') or []
 
-        return self._make_request(requests.patch, f'/appClients/{_path_id(app_client_id)}', body=optional_args)
+        body = {**dictstrip({'loginUrls': login_urls, 'defaultLoginUrl': default_login_url}), **optional_args}
+        return self._make_request(requests.patch, f'/appClients/{_path_id(app_client_id)}', body=body)
 
     def delete_app_client(self, app_client_id: str) -> Dict:
         """Delete the appClient with the provided appClientId, calls the DELETE /appClients/{appClientId} endpoint.
@@ -322,96 +336,6 @@ class Client:
 
         return self._make_request(requests.delete, f'/paymentMethods/{_path_id(payment_method_id)}')
 
-    def create_dataset(self, *, metadata: Optional[dict] = None, **optional_args) -> Dict:
-        """Creates a dataset, calls the POST /datasets endpoint.
-
-        :param name: Name of the dataset
-        :type name: str, optional
-        :param description: Description of the dataset
-        :type description: str, optional
-        :param metadata: Dictionary that can be used to store additional information
-        :type metadata: dict, optional
-        :return: Dataset response from REST API
-        :rtype: dict
-
-        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
- :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
-        """
-        body = dictstrip({'metadata': metadata})
-        body.update(**optional_args)
-        return self._make_request(requests.post, '/datasets', body=body)
-
-    def list_datasets(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
-        """List datasets available, calls the GET /datasets endpoint.
-
-        :param max_results: Maximum number of results to be returned
-        :type max_results: int, optional
-        :param next_token: A unique token for each page, use the returned token to retrieve the next page.
-        :type next_token: str, optional
-        :return: Datasets response from REST API without the content of each dataset
-        :rtype: dict
-
-        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
- :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
-        """
-        params = {
-            'maxResults': max_results,
-            'nextToken': next_token,
-        }
-        return self._make_request(requests.get, '/datasets', params=params)
-
-    def get_dataset(self, dataset_id: str) -> Dict:
-        """Get dataset, calls the GET /datasets/{datasetId} endpoint.
-
-        :param dataset_id: Id of the dataset
-        :type dataset_id: str
-        :return: Dataset response from REST API
-        :rtype: dict
-
-        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
- :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
-        """
-        return self._make_request(requests.get, f'/datasets/{_path_id(dataset_id)}')
-
-    def update_dataset(self, dataset_id, metadata: Optional[dict] = None, **optional_args) -> Dict:
-        """Updates a dataset, calls the PATCH /datasets/{datasetId} endpoint.
-
-        :param dataset_id: Id of the dataset
-        :type dataset_id: str
-        :param metadata: Dictionary that can be used to store additional information
-        :type metadata: dict, optional
-        :param name: Name of the dataset
-        :type name: str, optional
-        :param description: Description of the dataset
-        :type description: str, optional
-        :return: Dataset response from REST API
-        :rtype: dict
-
-        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
- :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
-        """
-        body = dictstrip({'metadata': metadata})
-        body.update(**optional_args)
-        return self._make_request(requests.patch, f'/datasets/{_path_id(dataset_id)}', body=body)
-
-    def delete_dataset(self, dataset_id: str, delete_documents: bool = False) -> Dict:
-        """Delete the dataset with the provided dataset_id, calls the DELETE /datasets/{datasetId} endpoint.
-
-        :param dataset_id: Id of the dataset
-        :type dataset_id: str
-        :param delete_documents: Set to True to delete documents in dataset before deleting dataset
-        :type delete_documents: bool
-        :return: Dataset response from REST API
-        :rtype: dict
-
-        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
- :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
-        """
-        if delete_documents:
-            self.delete_documents(dataset_id=dataset_id, delete_all=True)
-
-        return self._make_request(requests.delete, f'/datasets/{_path_id(dataset_id)}')
-
     def create_document(
         self,
         content: Content,
@@ -424,6 +348,7 @@ class Client:
         name: Optional[str] = None,
         agent_run_id: Optional[str] = None,
         retention_in_days: Optional[int] = None,
+        content_type: Optional[str] = None,
     ) -> Dict:
         """Creates a document, calls the POST /documents endpoint.
 
@@ -448,6 +373,8 @@ class Client:
         :type metadata: dict, optional
         :param name: Name of the document
         :type name: str, optional
+        :param content_type: MIME type of the content, e.g. 'application/pdf'. Detected by the API when left out
+        :type content_type: str, optional
         :return: Document response from REST API
         :rtype: dict
 
@@ -457,6 +384,7 @@ class Client:
         content_bytes, _ = parse_content(content, False, False)
 
         body = {
+            'contentType': content_type,
             'consentId': consent_id,
             'datasetId': dataset_id,
             'description': description,
@@ -644,6 +572,9 @@ class Client:
         *,
         metadata: Optional[dict] = None,
         dataset_id: Optional[str] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        retention_in_days: Optional[int] = None,
     ) -> Dict:
         """Update ground truth for a document, calls the PATCH /documents/{documentId} endpoint.
         Updating ground truth means adding the ground truth data for the particular document.
@@ -657,6 +588,12 @@ class Client:
         :type ground_truth: Sequence [ Dict [ str, Union [ str, bool ]  ] ], optional
         :param metadata: Dictionary that can be used to store additional information
         :type metadata: dict, optional
+        :param name: Name of the document
+        :type name: str, optional
+        :param description: Description of the document
+        :type description: str, optional
+        :param retention_in_days: How many days the document should be stored, 1 to 1825
+        :type retention_in_days: int, optional
         :return: Document response from REST API
         :rtype: dict
 
@@ -667,6 +604,9 @@ class Client:
             'groundTruth': ground_truth,
             'datasetId': dataset_id,
             'metadata': metadata,
+            'name': name,
+            'description': description,
+            'retentionInDays': retention_in_days,
         })
 
         return self._make_request(requests.patch, f'/documents/{_path_id(document_id)}', body=body)
@@ -693,6 +633,7 @@ class Client:
         *,
         max_results: Optional[int] = None,
         next_token: Optional[str] = None,
+        order: Optional[str] = None,
     ) -> Dict:
         """List logs, calls the GET /logs endpoint.
 
@@ -704,6 +645,8 @@ class Client:
         :type max_results: int, optional
         :param next_token: A unique token for each page, use the returned token to retrieve the next page.
         :type next_token: str, optional
+        :param order: Order of the logs, either 'ascending' or 'descending'
+        :type order: str, optional
         :return: Logs response from REST API
         :rtype: dict
 
@@ -714,6 +657,7 @@ class Client:
         params = {
             'maxResults': max_results,
             'nextToken': next_token,
+            'order': order,
         }
 
         return self._make_request(requests.get, url, params=dictstrip(params))
@@ -748,6 +692,8 @@ class Client:
         metadata: Optional[dict] = None,
         base_model: Optional[dict] = None,
         agent_id: Optional[str] = None,
+        llm_version: Optional[str] = None,
+        confidence_version: Optional[str] = None,
         **optional_args,
     ) -> Dict:
         """Creates a model, calls the POST /models endpoint.
@@ -797,6 +743,11 @@ class Client:
         :param agent_id: Id of the agent the model belongs to: one of the agent's resources from the start,\
  until it's deleted
         :type agent_id: str, optional
+        :param llm_version: The language model the model predicts with: 'sonnet-4.0', 'sonnet-4.5', 'sonnet-4.6', \
+'sonnet-5', 'sonnet-5.5', 'haiku-5.5' or 'qwen3-vl'
+        :type llm_version: str, optional
+        :param confidence_version: How confidences are estimated: 'v1' or 'v2'
+        :type confidence_version: str, optional
         :return: Model response from REST API
         :rtype: dict
 
@@ -819,6 +770,8 @@ class Client:
             'name': name,
             'description': description,
             'metadata': metadata,
+            'llmVersion': llm_version,
+            'confidenceVersion': confidence_version,
         })
         body.update(**optional_args)
         return self._make_request(requests.post, '/models', body=body)
@@ -886,6 +839,8 @@ or ``:$latest``
         preprocess_config: Optional[dict] = None,
         postprocess_config: Optional[dict] = None,
         metadata: Optional[dict] = None,
+        llm_version: Optional[str] = None,
+        confidence_version: Optional[str] = None,
         **optional_args,
     ) -> Dict:
         """Updates a model, calls the PATCH /models/{modelId} endpoint.
@@ -933,6 +888,11 @@ or ``:$latest``
         :type name: str, optional
         :param description: Description of the model
         :type description: str, optional
+        :param llm_version: The language model the model predicts with: 'sonnet-4.0', 'sonnet-4.5', 'sonnet-4.6', \
+'sonnet-5', 'sonnet-5.5', 'haiku-5.5' or 'qwen3-vl'
+        :type llm_version: str, optional
+        :param confidence_version: How confidences are estimated: 'v1' or 'v2'
+        :type confidence_version: str, optional
         :return: Model response from REST API
         :rtype: dict
 
@@ -944,6 +904,8 @@ or ``:$latest``
             'height': height,
             'fieldConfig': field_config,
             'metadata': metadata,
+            'llmVersion': llm_version,
+            'confidenceVersion': confidence_version,
             'preprocessConfig': preprocess_config,
             'postprocessConfig': postprocess_config,
         })
@@ -1366,6 +1328,9 @@ or ``:$latest``
         *,
         payment_method_id: Optional[str] = None,
         document_retention_in_days: Optional[int] = None,
+        plan_id: Optional[str] = None,
+        url: Optional[str] = None,
+        metadata: Optional[dict] = None,
         **optional_args,
     ) -> Dict:
         """Updates an organization, calls the PATCH /organizations/{organizationId} endpoint.
@@ -1378,13 +1343,19 @@ or ``:$latest``
         :type name: str, optional
         :param description: Description of the organization
         :type description: str, optional
+        :param plan_id: Id of the plan to subscribe to
+        :type plan_id: str, optional
+        :param url: The organization's website
+        :type url: str, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
         :return: Organization response from REST API
         :rtype: dict
 
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-        body = {**optional_args}
+        body = {**dictstrip({'planId': plan_id, 'url': url, 'metadata': metadata}), **optional_args}
         if payment_method_id:
             body['paymentMethodId'] = payment_method_id
 
@@ -1403,6 +1374,9 @@ or ``:$latest``
         postprocess_config: Optional[dict] = None,
         run_async: Optional[bool] = None,
         agent_run_id: Optional[str] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        metadata: Optional[dict] = None,
     ) -> Dict:
         """Create a prediction on a document using specified model, calls the POST /predictions endpoint.
 
@@ -1445,6 +1419,14 @@ or ``:$latest``
         :type postprocess_config: dict, optional
         :param run_async: If True run the prediction async, if False run sync. if omitted run synchronously.
         :type run_async: bool
+        :param agent_run_id: Id of an agent run to associate with the prediction
+        :type agent_run_id: str, optional
+        :param name: Name of the prediction
+        :type name: str, optional
+        :param description: Description of the prediction
+        :type description: str, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
         :return: Prediction response from REST API
         :rtype: dict
 
@@ -1459,6 +1441,9 @@ or ``:$latest``
             'postprocessConfig': postprocess_config,
             'async': run_async,
             'agentRunId': agent_run_id,
+            'name': name,
+            'description': description,
+            'metadata': metadata,
         }
         prediction = self._make_request(requests.post, '/predictions', body=dictstrip(body))
         predictions_format = prediction['postprocessConfig'].get('outputFormat')
@@ -1681,7 +1666,7 @@ or ``:$latest``
         """
         return self._make_request(requests.delete, f'/secrets/{_path_id(secret_id)}')
 
-    def create_user(self, email: str, *, role_ids=None, **optional_args) -> Dict:
+    def create_user(self, email: str, *, role_ids=None, app_client_id: Optional[str] = None, **optional_args) -> Dict:
         """Creates a new user, calls the POST /users endpoint.
 
         >>> from cradl.client import Client
@@ -1692,6 +1677,14 @@ or ``:$latest``
         :type email: str
         :param role_ids: List of roles to assign user
         :type role_ids: list, optional
+        :param app_client_id: Id of the app client the user signs in with
+        :type app_client_id: str, optional
+        :param name: Name of the user
+        :type name: str, optional
+        :param description: Description of the user
+        :type description: str, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
         :return: User response from REST API
         :rtype: dict
 
@@ -1701,6 +1694,7 @@ or ``:$latest``
         body = {
             'email': email,
             'roleIds': role_ids,
+            'appClientId': app_client_id,
             **optional_args,
         }
 
@@ -1757,6 +1751,12 @@ or ``:$latest``
         :type user_id: str
         :param role_ids: List of roles to assign user
         :type role_ids: list, optional
+        :param name: Name of the user
+        :type name: str, optional
+        :param description: Description of the user
+        :type description: str, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
         :return: User response from REST API
         :rtype: dict
 
@@ -1799,6 +1799,8 @@ or ``:$latest``
         :type name: str, optional
         :param description: Description of the role
         :type description: str, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
         :return: Role response from REST API
         :rtype: dict
 
@@ -1827,6 +1829,8 @@ or ``:$latest``
         :type name: str, optional
         :param description: Description of the role
         :type description: str, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
         :return: Role response from REST API
         :rtype: dict
 
@@ -1949,6 +1953,8 @@ or ``:$latest``
         :param agent_id: Id of the agent the validation belongs to: one of the agent's resources from the start,\
  until it's deleted
         :type agent_id: str, optional
+        :param enabled: If the validation is enabled or not
+        :type enabled: bool, optional
         :return: Dataset response from REST API
         :rtype: dict
 
@@ -1970,6 +1976,12 @@ or ``:$latest``
         :type validation_id: str
         :param config: New configuration for the validation
         :type config: str
+        :param name: Name of the validation
+        :type name: str, optional
+        :param description: Description of the validation
+        :type description: str, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
         :return: Validation response from REST API
         :rtype: dict
 
@@ -2792,13 +2804,28 @@ or ``:$latest``
         body = dictstrip({'input': input, 'agentRunId': agent_run_id, **optional_args})
         return self._make_request(requests.post, f'/hooks/{_path_id(hook_id)}/runs', body=body)
 
-    def update_hook_run(self, hook_id: str, run_id: str, **optional_args) -> Dict:
+    def update_hook_run(
+        self,
+        hook_id: str,
+        run_id: str,
+        *,
+        status: Optional[str] = None,
+        output: Optional[dict] = None,
+        metadata: Optional[dict] = None,
+        **optional_args,
+    ) -> Dict:
         """Update hook run, calls the PATCH /hooks/{hookId}/runs/{runId} endpoint.
 
         :param hook_id: Id of the hook
         :type hook_id: str
         :param run_id: Id of the run
         :type run_id: str
+        :param status: New status of the hook run: 'failed', 'ignored' or 'succeeded'
+        :type status: str, optional
+        :param output: Output dictionary of the hook run
+        :type output: dict, optional
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
         :return: Hook response from REST API
         :rtype: dict
 
@@ -2806,7 +2833,9 @@ or ``:$latest``
     :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         path = f'/hooks/{_path_id(hook_id)}/runs/{_path_id(run_id)}'
-        return self._make_request(requests.patch, path, body=optional_args)
+        body = dictstrip({'status': status, 'output': output, 'metadata': metadata})
+        body.update(**optional_args)
+        return self._make_request(requests.patch, path, body=body)
 
     def list_actions(
         self,
@@ -2860,6 +2889,7 @@ or ``:$latest``
         name: Optional[str] = None,
         secret_id: Optional[str] = None,
         agent_id: Optional[str] = None,
+        connection_id: Optional[str] = None,
     ) -> Dict:
 
         """Create action, calls the POST /actions endpoint.
@@ -2881,6 +2911,8 @@ or ``:$latest``
         :param agent_id: Id of the agent the action belongs to: one of the agent's resources from the start,\
  until it's deleted
         :type agent_id: str, optional
+        :param connection_id: Id of the connection (e.g. to Google Drive) the function uses
+        :type connection_id: str, optional
         :return: Action response from REST API
         :rtype: dict
 
@@ -2890,6 +2922,7 @@ or ``:$latest``
         body = dictstrip({
             'agentId': agent_id,
             'config': config,
+            'connectionId': connection_id,
             'description': description,
             'enabled': enabled,
             'functionId': function_id,
@@ -2921,6 +2954,7 @@ or ``:$latest``
         function_id: Optional[str] = None,
         metadata: Optional[dict] = None,
         secret_id: Optional[str] = None,
+        connection_id: Optional[str] = None,
         **optional_args,
     ) -> Dict:
 
@@ -2942,6 +2976,8 @@ or ``:$latest``
         :type metadata: dict, optional
         :param secret_id: Id of the secret to expand as input to functionId
         :type secret_id: str, optional
+        :param connection_id: Id of the connection (e.g. to Google Drive) the function uses
+        :type connection_id: str, optional
         :return: Action response from REST API
         :rtype: dict
 
@@ -2950,6 +2986,7 @@ or ``:$latest``
         """
         body = dictstrip({
             'config': config,
+            'connectionId': connection_id,
             'enabled': enabled,
             'functionId': function_id,
             'metadata': metadata,
@@ -3011,6 +3048,7 @@ or ``:$latest``
         *,
         agent_run_id: Optional[str] = None,
         metadata: Optional[dict] = None,
+        no_agent_run_update: Optional[bool] = None,
     ) -> Dict:
         """Create action run, calls the POST /actions/{actionId}/runs endpoint.
 
@@ -3022,6 +3060,8 @@ or ``:$latest``
         :type agent_run_id: str, optional
         :param metadata: Dictionary that can be used to store additional information
         :type metadata: dict, optional
+        :param no_agent_run_update: If True, the run doesn't change its agent run's status
+        :type no_agent_run_update: bool, optional
         :return: Action response from REST API
         :rtype: dict
 
@@ -3032,6 +3072,7 @@ or ``:$latest``
             'agentRunId': agent_run_id,
             'input': input,
             'metadata': metadata,
+            'noAgentRunUpdate': no_agent_run_update,
         })
         return self._make_request(requests.post, f'/actions/{_path_id(action_id)}/runs', body=body)
 
@@ -3054,6 +3095,8 @@ or ``:$latest``
         :type output: dict
         :param status: New status of the action run
         :type status: str
+        :param metadata: Dictionary that can be used to store additional information
+        :type metadata: dict, optional
         :return: Action response from REST API
         :rtype: dict
 
