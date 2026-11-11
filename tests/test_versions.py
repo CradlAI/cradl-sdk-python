@@ -63,3 +63,13 @@ def test_version_and_alias_paths(client: Client, sent, singular, collection, cre
         ('POST', f'/{collection}/{resource_id}/versions', {}, None),
         ('PUT', f'/{collection}/{resource_id}/aliases/prod', {'resourceVersion': 3}, None),
     ]
+
+
+def test_an_agent_alias_environment_is_cleared_with_none(client: Client, sent):
+    agent_id = service.create_agent_id()
+    client.set_agent_alias(agent_id, 'prod', resource_version=2, environment_id=None)
+    client.set_agent_alias(agent_id, 'prod', resource_version=2)
+    assert [body for _, _, body, _ in sent] == [
+        {'resourceVersion': 2, 'environmentId': None},
+        {'resourceVersion': 2},
+    ]

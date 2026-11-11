@@ -101,6 +101,13 @@ def test_update_agent_environments(client: Client, sent):
     }, None)]
 
 
+def test_the_draft_environment_is_cleared_with_none(client: Client, sent):
+    agent_id = service.create_agent_id()
+    client.update_agent(agent_id, draft_environment_id=None)
+    client.update_agent(agent_id, name='Agent')
+    assert [body for _, _, body, _ in sent] == [{'draftEnvironmentId': None}, {'name': 'Agent'}]
+
+
 def test_get_agent_graph(client: Client):
     graph = client.get_agent_graph(service.create_agent_id())
     assert 'nodes' in graph, 'Missing nodes in graph'

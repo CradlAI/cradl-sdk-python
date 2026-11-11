@@ -5,7 +5,7 @@
 - Agent, model and function versions: `create_*_version` publishes one, `list_*_versions` lists them
 - Aliases: `set_*_alias` creates an alias or moves it to a version, and `get_*_alias`, `list_*_aliases` and `delete_*_alias`
 - `get_agent`, `get_model`, `get_function`, `create_agent_run` and `get_agent_graph` take qualified ids: `<id>:3`, `<id>:@prod` or `<id>:$latest`
-- `update_agent` takes `environments` and `draft_environment_id`, and `set_agent_alias` an `environment_id`
+- `update_agent` takes `environments` and `draft_environment_id`, and `set_agent_alias` an `environment_id`; `None` clears either
 - `delete_agent(delete_resources=True)` also deletes the agent's hooks, actions, models and validations
 - Functions: `list_functions`, `create_function` (uploads the code given as `content`), `get_function` (`get_content=True` for the code), `update_function` and `delete_function`
 - `get_agent_graph` and `update_agent_graph`, `list_organizations` and `create_organization`, and `create_hook_run`
@@ -15,7 +15,7 @@
 - Parameters of the API reference by name: `content_type` in `create_document`; `name`, `description` and `retention_in_days` in `update_document`; `name`, `description` and `metadata` in `create_prediction`; `llm_version` and `confidence_version` in `create_model` and `update_model`; `connection_id` in `create_action` and `update_action`; `no_agent_run_update` in `create_action_run`; `status`, `output` and `metadata` in `update_hook_run`; `plan_id`, `url` and `metadata` in `update_organization`; `app_client_id` in `create_user`; `login_urls` and `default_login_url` in `update_app_client`; `order` in `list_logs`
 - Ids are quoted in request paths, so an id naming its organization (`cradl:organization:cradl/cradl:function:...`) works
 - **Breaking:** `resource_ids` is removed from `create_agent` and `update_agent`, which the API rejects: create resources with `agent_id`
-- **Breaking:** the dataset methods (`create_dataset`, `list_datasets`, `get_dataset`, `update_dataset`, `delete_dataset`) are removed: datasets aren't part of the API reference
+- **Breaking:** the dataset methods (`create_dataset`, `list_datasets`, `get_dataset`, `update_dataset`, `delete_dataset`) are removed: the SDK covers the endpoints of the API reference, which doesn't include datasets. `dataset_id` stays on the document methods
 - **Breaking:** Python 3.10 is no longer supported; Python 3.11 to 3.15 are
 
 ## Version 0.6.9 - 2026-11-09

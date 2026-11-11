@@ -1,4 +1,5 @@
 import random
+from unittest.mock import Mock
 
 import pytest
 from cradl.client import Client
@@ -97,3 +98,33 @@ def test_update_function_code_only(static_client: Client):
 def test_delete_function(client: Client):
     function = client.delete_function(service.create_function_id())
     assert_function(function)
+
+
+def test_a_function_whose_code_cannot_be_read_is_not_created(client: Client, sent, tmp_path):
+    with pytest.raises(FileNotFoundError):
+        client.create_function('python', content=tmp_path / 'missing.py')
+    assert sent == []
+
+
+@pytest.mark.parametrize('code', [b'pass', bytearray(b'pass'), b'def main(event):\n    return event\n'])
+def test_bytes_are_uploaded_as_they_are(client: Client, monkeypatch, code):
+    """Even when they happen to be valid base64, as b'pass' is"""
+    uploaded = []
+    function = {'functionId': 'f', 'fileUrl': 'https://files/f'}
+    monkeypatch.setattr(client, '_make_request', lambda *args, **kwargs: function)
+    monkeypatch.setattr(client, '_make_fileserver_request', lambda *_, content=None, **__: uploaded.append(content))
+
+    client.create_function('python', content=code)
+    client.update_function(service.create_function_id(), content=code)
+
+    assert uploaded == [bytes(code), bytes(code)]
+
+
+def test_a_function_without_a_code_file(client: Client, monkeypatch):
+    """A managed function has no fileUrl: no content to get, and no file to upload to"""
+    monkeypatch.setattr(client, '_make_request', lambda *args, **kwargs: {'functionId': 'f', 'fileUrl': None})
+    monkeypatch.setattr(client, '_make_fileserver_request', Mock(side_effect=AssertionError('no file')))
+
+    assert 'content' not in client.get_function(service.create_function_id(), get_content=True)
+    with pytest.raises(ValueError, match='no code file'):
+        client.update_function(service.create_function_id(), content=b'pass')

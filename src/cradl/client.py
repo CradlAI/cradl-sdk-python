@@ -3,7 +3,7 @@ import json
 from base64 import b64encode
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Sequence, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 from urllib.parse import urlparse, quote
 
 import requests  # type: ignore
@@ -26,6 +26,23 @@ def datetimestr(d: Optional[Union[str, datetime]]) -> Optional[str]:
             d = d.astimezone()
         return d.isoformat()
     return d
+
+
+class _Unset:
+    """The default of a parameter where None is a value, which clears the field: an argument that wasn't given"""
+    def __repr__(self):
+        return 'UNSET'
+
+
+UNSET: Any = _Unset()
+
+
+def _function_code(content: 'Content') -> bytes:
+    """A function's code as it's uploaded. Bytes are code as they are, not base64 as parse_content takes them to be"""
+    if isinstance(content, (bytes, bytearray)):
+        content = io.BytesIO(content)
+    content_bytes, _ = parse_content(content, False, False)
+    return content_bytes
 
 
 def _path_id(resource_id: str) -> str:
@@ -1011,7 +1028,7 @@ or ``:$latest``
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-        body = {'resourceVersion': resource_version}
+        body: Dict[str, Any] = {'resourceVersion': resource_version}
         return self._make_request(requests.put, f'/models/{_path_id(model_id)}/aliases/{_path_id(alias)}', body=body)
 
     def delete_model_alias(self, model_id: str, alias: str) -> Dict:
@@ -1096,6 +1113,8 @@ or ``:$latest``
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
+        # Read before the function is created, so a file that can't be read leaves no function behind
+        code = None if content is None else _function_code(content)
         body = dictstrip({
             'runtime': runtime,
             'name': name,
@@ -1103,10 +1122,9 @@ or ``:$latest``
             'metadata': metadata,
         })
         function = self._make_request(requests.post, '/functions', body=body)
-        if content is not None:
-            content_bytes, _ = parse_content(content, False, False)
+        if code is not None:
             try:
-                self._make_fileserver_request(requests.put, function['fileUrl'], content=content_bytes)
+                self._make_fileserver_request(requests.put, function['fileUrl'], content=code)
             except Exception as e:
                 self.delete_function(function['functionId'])
                 raise e
@@ -1118,7 +1136,8 @@ or ``:$latest``
         :param function_id: Id of the function, optionally qualified with a version (``:3``), an alias (``:@prod``) \
 or ``:$latest``
         :type function_id: str
-        :param get_content: Also get the function's code, as ``content``
+        :param get_content: Also get the function's code, as ``content``. A function without a code file of its own, \
+such as a managed one, has no ``fileUrl`` and gets no ``content``
         :type get_content: bool, optional
         :return: Function response from REST API
         :rtype: dict
@@ -1127,7 +1146,7 @@ or ``:$latest``
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         function = self._make_request(requests.get, f'/functions/{_path_id(function_id)}')
-        if get_content:
+        if get_content and function.get('fileUrl'):
             function['content'] = self._make_fileserver_request(requests.get, function['fileUrl']).decode()
         return function
 
@@ -1136,7 +1155,8 @@ or ``:$latest``
 
         :param function_id: Id of the function
         :type function_id: str
-        :param content: The function's new code: a path to a file, bytes or a stream
+        :param content: The function's new code: a path to a file, bytes or a stream. A function without a code file \
+of its own, such as a managed one, can't be given code (ValueError)
         :type content: Content, optional
         :param name: Name of the function
         :type name: str, optional
@@ -1150,13 +1170,15 @@ or ``:$latest``
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-        if optional_args or content is None:
+        code = None if content is None else _function_code(content)
+        if optional_args or code is None:
             function = self._make_request(requests.patch, f'/functions/{_path_id(function_id)}', body=optional_args)
         else:
             function = self.get_function(function_id)
-        if content is not None:
-            content_bytes, _ = parse_content(content, False, False)
-            self._make_fileserver_request(requests.put, function['fileUrl'], content=content_bytes)
+        if code is not None:
+            if not function.get('fileUrl'):
+                raise ValueError(f'Function {function_id} has no code file of its own to upload to')
+            self._make_fileserver_request(requests.put, function['fileUrl'], content=code)
         return function
 
     def delete_function(self, function_id: str) -> Dict:
@@ -1254,7 +1276,7 @@ or ``:$latest``
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-        body = {'resourceVersion': resource_version}
+        body: Dict[str, Any] = {'resourceVersion': resource_version}
         path = f'/functions/{_path_id(function_id)}/aliases/{_path_id(alias)}'
         return self._make_request(requests.put, path, body=body)
 
@@ -2185,7 +2207,7 @@ or ``:$latest``
         *,
         metadata: Optional[dict] = None,
         environments: Optional[List[dict]] = None,
-        draft_environment_id: Optional[str] = None,
+        draft_environment_id: Optional[str] = UNSET,
         **optional_args,
     ) -> Dict:
         """Update agent, calls the PATCH /agents/{agentId} endpoint.
@@ -2202,8 +2224,8 @@ or ``:$latest``
 ``{'id': 'env-…', 'name': '…', 'variables': [{'name': '…', 'value': …, 'description': '…'}]}``. Leave out \
 ``id`` to add an environment. Replaces the list
         :type environments: list[dict], optional
-        :param draft_environment_id: Id of the environment the draft runs with
-        :type draft_environment_id: str, optional
+        :param draft_environment_id: Id of the environment the draft runs with. None clears it
+        :type draft_environment_id: str or None, optional
         :return: Agent response from REST API
         :rtype: dict
 
@@ -2213,8 +2235,9 @@ or ``:$latest``
         body = dictstrip({
             'metadata': metadata,
             'environments': environments,
-            'draftEnvironmentId': draft_environment_id,
         })
+        if draft_environment_id is not UNSET:
+            body['draftEnvironmentId'] = draft_environment_id
         body.update(**optional_args)
         return self._make_request(requests.patch, f'/agents/{_path_id(agent_id)}', body=body)
 
@@ -2335,7 +2358,7 @@ a resource's saved position
         alias: str,
         *,
         resource_version: int,
-        environment_id: Optional[str] = None,
+        environment_id: Optional[str] = UNSET,
     ) -> Dict:
         """Create an alias of the agent, or move it to another version, calls the
         PUT /agents/{agentId}/aliases/{aliasId} endpoint. Runs of ``<agent_id>:@<alias>`` run that version.
@@ -2346,15 +2369,18 @@ a resource's saved position
         :type alias: str
         :param resource_version: The version the alias points to
         :type resource_version: int
-        :param environment_id: Id of the environment the alias's runs run with
-        :type environment_id: str, optional
+        :param environment_id: Id of the environment the alias's runs run with. None clears it, and leaving it out \
+keeps the alias's environment
+        :type environment_id: str or None, optional
         :return: Alias response from REST API
         :rtype: dict
 
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-        body = dictstrip({'resourceVersion': resource_version, 'environmentId': environment_id})
+        body: Dict[str, Any] = {'resourceVersion': resource_version}
+        if environment_id is not UNSET:
+            body['environmentId'] = environment_id
         return self._make_request(requests.put, f'/agents/{_path_id(agent_id)}/aliases/{_path_id(alias)}', body=body)
 
     def delete_agent_alias(self, agent_id: str, alias: str) -> Dict:
