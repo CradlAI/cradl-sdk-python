@@ -13,9 +13,9 @@
 - `list_actions`, `list_hooks`, `list_models`, `list_validations`, `list_functions` and `list_documents` get resources by id: `action_id=[...]` etc.
 - `update_hook` takes `function_id`
 - Parameters of the API reference by name: `content_type` in `create_document`; `name`, `description` and `retention_in_days` in `update_document`; `name`, `description` and `metadata` in `create_prediction`; `llm_version` and `confidence_version` in `create_model` and `update_model`; `connection_id` in `create_action` and `update_action`; `no_agent_run_update` in `create_action_run`; `status`, `output` and `metadata` in `update_hook_run`; `plan_id`, `url` and `metadata` in `update_organization`; `app_client_id` in `create_user`; `order` in `list_logs`
-- `create_app_client`'s `logout_urls`, `callback_urls`, `login_urls` and `default_login_url` are deprecated, and warn: they only configure the public app clients of organizations that sign in with Cognito
 - Ids are quoted in request paths, so an id naming its organization (`cradl:organization:cradl/cradl:function:...`) works
 - **Breaking:** `resource_ids` is removed from `create_agent` and `update_agent`, which the API rejects: create resources with `agent_id`
+- **Breaking:** `create_app_client` doesn't take `logout_urls`, `callback_urls`, `login_urls`, `default_login_url` or `generate_secret`: they only configured public app clients, a legacy of Cognito. An app client is always created with a secret (`generateSecret: true`)
 - **Breaking:** the dataset methods (`create_dataset`, `list_datasets`, `get_dataset`, `update_dataset`, `delete_dataset`) are removed: the SDK covers the endpoints of the API reference, which doesn't include datasets. `dataset_id` stays on the document methods
 - **Breaking:** Python 3.10 is no longer supported; Python 3.11 to 3.15 are
 

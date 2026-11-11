@@ -1,5 +1,4 @@
 import random
-import warnings
 
 import pytest
 from cradl.client import Client
@@ -14,45 +13,12 @@ def test_create_app_client(client: Client, name_and_description):
     assert_app_client(response)
 
 
-@pytest.mark.skip(reason='This resource is currently not intended to use in the new API')
-@pytest.mark.parametrize('name_and_description', util.name_and_description_combinations())
-def test_create_app_client_without_secret(client: Client, name_and_description):
-    response = client.create_app_client(
-        **name_and_description,
-        generate_secret=False,
-        callback_urls=['http://localhost:3000/authCallback'],
-        logout_urls=['http://localhost:3000/logout'],
-        login_urls=['http://localhost:3000/login'],
-        default_login_url='http://localhost:3000/login',
-    )
-    assert_app_client(response)
-
-
-def test_login_logout_and_callback_urls_are_deprecated(client: Client, sent):
-    """They still reach the API, which still accepts them"""
-    urls = {
-        'callback_urls': ['http://localhost:3000/authCallback'],
-        'logout_urls': ['http://localhost:3000/logout'],
-        'login_urls': ['http://localhost:3000/login'],
-        'default_login_url': 'http://localhost:3000/login',
-    }
-    deprecated = 'logout_urls, callback_urls, login_urls, default_login_url are deprecated'
-    with pytest.warns(DeprecationWarning, match=deprecated):
-        client.create_app_client(generate_secret=False, **urls)
-    assert sent[0][2] == {
-        'callbackUrls': urls['callback_urls'],
-        'logoutUrls': urls['logout_urls'],
-        'loginUrls': urls['login_urls'],
-        'defaultLoginUrl': urls['default_login_url'],
-        'generateSecret': False,
-    }
-
-
-def test_an_app_client_with_a_secret_does_not_warn(client: Client, sent):
-    with warnings.catch_warnings():
-        warnings.simplefilter('error', DeprecationWarning)
-        client.create_app_client(name='Integration')
-    assert sent[0][2] == {'name': 'Integration', 'generateSecret': True}
+def test_create_app_client_sends_what_it_is_given(client: Client, sent):
+    """Always with a secret: login, logout and callback urls, and public app clients, are gone"""
+    role_id = service.create_role_id()
+    client.create_app_client(name='Integration', role_ids=[role_id])
+    body = {'name': 'Integration', 'roleIds': [role_id], 'generateSecret': True}
+    assert sent == [('POST', '/appClients', body, None)]
 
 
 @pytest.mark.skip(reason='This resource is currently not intended to use in the new API')

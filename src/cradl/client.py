@@ -1,6 +1,5 @@
 import io
 import json
-import warnings
 from base64 import b64encode
 from datetime import datetime
 from pathlib import Path
@@ -27,15 +26,6 @@ def datetimestr(d: Optional[Union[str, datetime]]) -> Optional[str]:
             d = d.astimezone()
         return d.isoformat()
     return d
-
-
-def _warn_app_client_urls(names: List[str]):
-    warnings.warn(
-        f'{", ".join(names)} {"is" if len(names) == 1 else "are"} deprecated: login, logout and callback urls only '
-        'configure the public app clients of organizations that sign in with Cognito',
-        DeprecationWarning,
-        stacklevel=3,
-    )
 
 
 class _Unset:
@@ -130,15 +120,7 @@ class Client:
         )
         return decode_response(response, return_json=False)
 
-    def create_app_client(
-        self,
-        generate_secret=True,
-        logout_urls=None,
-        callback_urls=None,
-        login_urls=None,
-        default_login_url=None,
-        **optional_args,
-    ) -> Dict:
+    def create_app_client(self, **optional_args) -> Dict:
         """Creates an appClient, calls the POST /appClients endpoint.
 
         >>> from cradl.client import Client
@@ -149,43 +131,18 @@ class Client:
         :type name: str, optional
         :param description: Description of the appClient
         :type description: str, optional
-        :param generate_secret: Set to False to create a public app client, default: True. Only organizations that \
-sign in with Cognito can create one
-        :type generate_secret: Boolean
-        :param logout_urls: Deprecated, and warns: a public app client's logout urls
-        :type logout_urls: List[str]
-        :param callback_urls: Deprecated, and warns: a public app client's callback urls
-        :type callback_urls: List[str]
-        :param login_urls: Deprecated, and warns: a public app client's login urls
-        :type login_urls: List[str]
-        :param default_login_url: Deprecated, and warns: a public app client's default login url
-        :type default_login_url: str
         :param role_ids: List of roles to assign appClient
         :type role_ids: str, optional
         :param metadata: Dictionary that can be used to store additional information
         :type metadata: dict, optional
-        :return: AppClient response from REST API
+        :return: AppClient response from REST API, with the ``clientId`` and ``clientSecret`` to get tokens with
         :rtype: dict
 
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-        urls = {
-            'logout_urls': logout_urls,
-            'callback_urls': callback_urls,
-            'login_urls': login_urls,
-            'default_login_url': default_login_url,
-        }
-        if deprecated := [name for name, value in urls.items() if value is not None]:
-            _warn_app_client_urls(deprecated)
-        body = dictstrip({
-            'logoutUrls': logout_urls,
-            'callbackUrls': callback_urls,
-            'loginUrls': login_urls,
-            'defaultLoginUrl': default_login_url,
-            **optional_args,
-        })
-        body['generateSecret'] = generate_secret
+        # Always with a secret: an app client without one is a public app client, a legacy of Cognito
+        body = {**dictstrip(optional_args), 'generateSecret': True}
         if 'role_ids' in body:
             body['roleIds'] = body.pop('role_ids') or []
 
