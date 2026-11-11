@@ -11,24 +11,18 @@ from . import service, util
 @pytest.mark.parametrize('postprocess_config', [service.postprocess_config(), None])
 @pytest.mark.parametrize('name_and_description', util.name_and_description_combinations())
 @pytest.mark.parametrize('metadata', [util.metadata(), None])
-@pytest.mark.parametrize('base_model', [
-    {'organizationId': service.create_organization_id(), 'modelId': service.create_model_id()},
-    None,
-])
 def test_create_model(
     client: Client,
     preprocess_config,
     postprocess_config,
     name_and_description,
     metadata,
-    base_model,
 ):
     response = client.create_model(
         field_config=service.field_config(),
         preprocess_config=preprocess_config,
         postprocess_config=postprocess_config,
         metadata=metadata,
-        base_model=base_model,
         **name_and_description,
     )
     logging.info(response)

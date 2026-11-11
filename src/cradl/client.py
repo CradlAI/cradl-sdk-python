@@ -671,10 +671,8 @@ class Client:
         name: Optional[str] = None,
         description: Optional[str] = None,
         metadata: Optional[dict] = None,
-        base_model: Optional[dict] = None,
         agent_id: Optional[str] = None,
         llm_version: Optional[str] = None,
-        confidence_version: Optional[str] = None,
         **optional_args,
     ) -> Dict:
         """Creates a model, calls the POST /models endpoint.
@@ -718,29 +716,18 @@ class Client:
         :type description: str, optional
         :param metadata: Dictionary that can be used to store additional information
         :type metadata: dict, optional
-        :param base_model: Specify which model to use as base model. Example: \
-{"organizationId": "cradl:organization:cradl", "modelId": "cradl:model:invoice"}
-        :type base_model: dict, optional
         :param agent_id: Id of the agent the model belongs to: one of the agent's resources from the start,\
  until it's deleted
         :type agent_id: str, optional
         :param llm_version: The language model the model predicts with: 'sonnet-4.0', 'sonnet-4.5', 'sonnet-4.6', \
 'sonnet-5', 'sonnet-5.5', 'haiku-5.5' or 'qwen3-vl'
         :type llm_version: str, optional
-        :param confidence_version: How confidences are estimated: 'v1' or 'v2'
-        :type confidence_version: str, optional
         :return: Model response from REST API
         :rtype: dict
 
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
-        if base_model:
-            metadata = {
-                **(metadata or {}),
-                'baseModel': base_model,
-            }
-
         body = dictstrip({
             'agentId': agent_id,
             'width': width,
@@ -752,7 +739,6 @@ class Client:
             'description': description,
             'metadata': metadata,
             'llmVersion': llm_version,
-            'confidenceVersion': confidence_version,
         })
         body.update(**optional_args)
         return self._make_request(requests.post, '/models', body=body)
@@ -821,7 +807,6 @@ or ``:$latest``
         postprocess_config: Optional[dict] = None,
         metadata: Optional[dict] = None,
         llm_version: Optional[str] = None,
-        confidence_version: Optional[str] = None,
         **optional_args,
     ) -> Dict:
         """Updates a model, calls the PATCH /models/{modelId} endpoint.
@@ -872,8 +857,6 @@ or ``:$latest``
         :param llm_version: The language model the model predicts with: 'sonnet-4.0', 'sonnet-4.5', 'sonnet-4.6', \
 'sonnet-5', 'sonnet-5.5', 'haiku-5.5' or 'qwen3-vl'
         :type llm_version: str, optional
-        :param confidence_version: How confidences are estimated: 'v1' or 'v2'
-        :type confidence_version: str, optional
         :return: Model response from REST API
         :rtype: dict
 
@@ -886,7 +869,6 @@ or ``:$latest``
             'fieldConfig': field_config,
             'metadata': metadata,
             'llmVersion': llm_version,
-            'confidenceVersion': confidence_version,
             'preprocessConfig': preprocess_config,
             'postprocessConfig': postprocess_config,
         })
@@ -1652,7 +1634,7 @@ of its own, such as a managed one, can't be given code (ValueError)
         """
         return self._make_request(requests.delete, f'/secrets/{_path_id(secret_id)}')
 
-    def create_user(self, email: str, *, role_ids=None, app_client_id: Optional[str] = None, **optional_args) -> Dict:
+    def create_user(self, email: str, *, role_ids=None, **optional_args) -> Dict:
         """Creates a new user, calls the POST /users endpoint.
 
         >>> from cradl.client import Client
@@ -1663,8 +1645,6 @@ of its own, such as a managed one, can't be given code (ValueError)
         :type email: str
         :param role_ids: List of roles to assign user
         :type role_ids: list, optional
-        :param app_client_id: Id of the app client the user signs in with
-        :type app_client_id: str, optional
         :param name: Name of the user
         :type name: str, optional
         :param description: Description of the user
@@ -1680,7 +1660,6 @@ of its own, such as a managed one, can't be given code (ValueError)
         body = {
             'email': email,
             'roleIds': role_ids,
-            'appClientId': app_client_id,
             **optional_args,
         }
 
