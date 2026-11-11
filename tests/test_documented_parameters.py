@@ -25,9 +25,6 @@ from . import service
     }),
     ('update_organization', ['me'], {'url': 'https://example.com', 'metadata': {'a': 1}}),
     ('create_user', ['foo@example.com'], {'app_client_id': service.create_app_client_id()}),
-    ('update_app_client', [service.create_app_client_id()], {
-        'login_urls': ['https://example.com/login'], 'default_login_url': 'https://example.com/login',
-    }),
     ('list_logs', [], {'order': 'descending'}),
 ])
 def test_documented_parameters(static_client: Client, method, args, kwargs):

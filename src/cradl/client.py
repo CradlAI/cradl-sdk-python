@@ -1,5 +1,6 @@
 import io
 import json
+import warnings
 from base64 import b64encode
 from datetime import datetime
 from pathlib import Path
@@ -26,6 +27,15 @@ def datetimestr(d: Optional[Union[str, datetime]]) -> Optional[str]:
             d = d.astimezone()
         return d.isoformat()
     return d
+
+
+def _warn_app_client_urls(names: List[str]):
+    warnings.warn(
+        f'{", ".join(names)} {"is" if len(names) == 1 else "are"} deprecated: login, logout and callback urls only '
+        'configure the public app clients of organizations that sign in with Cognito',
+        DeprecationWarning,
+        stacklevel=3,
+    )
 
 
 class _Unset:
@@ -139,15 +149,16 @@ class Client:
         :type name: str, optional
         :param description: Description of the appClient
         :type description: str, optional
-        :param generate_secret: Set to False to create a Public app client, default: True
+        :param generate_secret: Set to False to create a public app client, default: True. Only organizations that \
+sign in with Cognito can create one
         :type generate_secret: Boolean
-        :param logout_urls: List of logout urls
+        :param logout_urls: Deprecated, and warns: a public app client's logout urls
         :type logout_urls: List[str]
-        :param callback_urls: List of callback urls
+        :param callback_urls: Deprecated, and warns: a public app client's callback urls
         :type callback_urls: List[str]
-        :param login_urls: List of login urls
+        :param login_urls: Deprecated, and warns: a public app client's login urls
         :type login_urls: List[str]
-        :param default_login_url: Default login url
+        :param default_login_url: Deprecated, and warns: a public app client's default login url
         :type default_login_url: str
         :param role_ids: List of roles to assign appClient
         :type role_ids: str, optional
@@ -159,6 +170,14 @@ class Client:
         :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
+        urls = {
+            'logout_urls': logout_urls,
+            'callback_urls': callback_urls,
+            'login_urls': login_urls,
+            'default_login_url': default_login_url,
+        }
+        if deprecated := [name for name, value in urls.items() if value is not None]:
+            _warn_app_client_urls(deprecated)
         body = dictstrip({
             'logoutUrls': logout_urls,
             'callbackUrls': callback_urls,
@@ -208,14 +227,7 @@ class Client:
         }
         return self._make_request(requests.get, '/appClients', params=params)
 
-    def update_app_client(
-        self,
-        app_client_id,
-        *,
-        login_urls: Optional[List[str]] = None,
-        default_login_url: Optional[str] = None,
-        **optional_args,
-    ) -> Dict:
+    def update_app_client(self, app_client_id, **optional_args) -> Dict:
         """Updates an appClient, calls the PATCH /appClients/{appClientId} endpoint.
 
         :param app_client_id: Id of the appClient
@@ -228,10 +240,6 @@ class Client:
         :type description: str, optional
         :param role_ids: List of roles to assign appClient
         :type role_ids: str, optional
-        :param login_urls: List of login urls
-        :type login_urls: List[str], optional
-        :param default_login_url: Default login url
-        :type default_login_url: str, optional
         :return: AppClient response from REST API
         :rtype: dict
 
@@ -241,8 +249,7 @@ class Client:
         if 'role_ids' in optional_args:
             optional_args['roleIds'] = optional_args.pop('role_ids') or []
 
-        body = {**dictstrip({'loginUrls': login_urls, 'defaultLoginUrl': default_login_url}), **optional_args}
-        return self._make_request(requests.patch, f'/appClients/{_path_id(app_client_id)}', body=body)
+        return self._make_request(requests.patch, f'/appClients/{_path_id(app_client_id)}', body=optional_args)
 
     def delete_app_client(self, app_client_id: str) -> Dict:
         """Delete the appClient with the provided appClientId, calls the DELETE /appClients/{appClientId} endpoint.
