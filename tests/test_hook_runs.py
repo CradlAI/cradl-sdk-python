@@ -1,4 +1,6 @@
 import random
+from uuid import uuid4
+
 import pytest
 from cradl.client import Client
 
@@ -8,6 +10,17 @@ from . import service
 def assert_hook_run(run):
     assert 'runId' in run, 'Missing runId in hook run'
     assert 'hookId' in run, 'Missing hookId in hook run'
+
+
+def test_create_hook_run(client: Client):
+    run = client.create_hook_run(service.create_hook_id(), {'foo': 'bar'}, name='Test run')
+    assert_hook_run(run)
+
+
+def test_create_hook_run_for_an_agent_run(client: Client):
+    agent_run_id = f'{service.create_agent_id()}/cradl:run:{uuid4().hex}'
+    run = client.create_hook_run(service.create_hook_id(), {'foo': 'bar'}, agent_run_id=agent_run_id)
+    assert_hook_run(run)
 
 
 def test_list_hook_runs(client: Client):

@@ -13,18 +13,12 @@ def test_create_app_client(client: Client, name_and_description):
     assert_app_client(response)
 
 
-@pytest.mark.skip(reason='This resource is currently not intended to use in the new API')
-@pytest.mark.parametrize('name_and_description', util.name_and_description_combinations())
-def test_create_app_client_without_secret(client: Client, name_and_description):
-    response = client.create_app_client(
-        **name_and_description,
-        generate_secret=False,
-        callback_urls=['http://localhost:3000/authCallback'],
-        logout_urls=['http://localhost:3000/logout'],
-        login_urls=['http://localhost:3000/login'],
-        default_login_url='http://localhost:3000/login',
-    )
-    assert_app_client(response)
+def test_create_app_client_sends_what_it_is_given(client: Client, sent):
+    """Always with a secret: login, logout and callback urls, and public app clients, are gone"""
+    role_id = service.create_role_id()
+    client.create_app_client(name='Integration', role_ids=[role_id])
+    body = {'name': 'Integration', 'roleIds': [role_id], 'generateSecret': True}
+    assert sent == [('POST', '/appClients', body, None)]
 
 
 @pytest.mark.skip(reason='This resource is currently not intended to use in the new API')

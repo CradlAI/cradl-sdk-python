@@ -15,21 +15,6 @@ def test_create_agent(client: Client):
     assert_agent(agent)
 
 
-def test_create_agent_with_resource_ids_is_deprecated(client: Client):
-    with pytest.warns(DeprecationWarning, match='agent_id'):
-        agent = client.create_agent(
-            name='Test Agent',
-            description='A test agent',
-            resource_ids=[
-                service.create_action_id(),
-                service.create_hook_id(),
-                service.create_validation_id(),
-                service.create_model_id(),
-            ],
-        )
-    assert_agent(agent)
-
-
 def test_list_agents(client: Client):
     response = client.list_agents()
     assert 'agents' in response, 'Missing agents in response'
@@ -63,13 +48,6 @@ def test_update_agent(client: Client):
     assert_agent(agent)
 
 
-def test_update_agent_with_resource_ids_is_deprecated(client: Client):
-    agent_id = service.create_agent_id()
-    with pytest.warns(DeprecationWarning, match='agent_id'):
-        agent = client.update_agent(agent_id, name='Updated Agent', resource_ids=[service.create_action_id()])
-    assert_agent(agent)
-
-
 @pytest.mark.parametrize('create, args', [
     ('create_action', {'function_id': service.create_function_id()}),
     ('create_hook', {'trigger': 'Document is Created'}),
@@ -98,3 +76,56 @@ def test_delete_agent(client: Client):
     agent_id = service.create_agent_id()
     agent = client.delete_agent(agent_id)
     assert_agent(agent)
+
+
+def test_delete_agent_with_its_resources(client: Client):
+    agent = client.delete_agent(service.create_agent_id(), delete_resources=True)
+    assert_agent(agent)
+
+
+def test_delete_resources_is_a_query_parameter(client: Client, sent):
+    agent_id = service.create_agent_id()
+    client.delete_agent(agent_id, delete_resources=True)
+    client.delete_agent(agent_id)
+    assert [params for *_, params in sent] == [{'deleteResources': 'true'}, None]
+
+
+def test_update_agent_environments(client: Client, sent):
+    """Recorded: the mock API's specification types draftEnvironmentId and a variable's value as objects"""
+    agent_id = service.create_agent_id()
+    environments = [{'name': 'Production', 'variables': [{'name': 'API_URL', 'value': 'https://example.com'}]}]
+    client.update_agent(agent_id, environments=environments, draft_environment_id='env-0123456789ab')
+    assert sent == [('PATCH', f'/agents/{agent_id}', {
+        'environments': environments,
+        'draftEnvironmentId': 'env-0123456789ab',
+    }, None)]
+
+
+def test_the_draft_environment_is_cleared_with_none(client: Client, sent):
+    agent_id = service.create_agent_id()
+    client.update_agent(agent_id, draft_environment_id=None)
+    client.update_agent(agent_id, name='Agent')
+    assert [body for _, _, body, _ in sent] == [{'draftEnvironmentId': None}, {'name': 'Agent'}]
+
+
+def test_get_agent_graph(client: Client):
+    graph = client.get_agent_graph(service.create_agent_id())
+    assert 'nodes' in graph, 'Missing nodes in graph'
+    assert 'edges' in graph, 'Missing edges in graph'
+
+
+def test_update_agent_graph(client: Client):
+    graph = client.update_agent_graph(service.create_agent_id(), layout={service.create_hook_id(): {'x': 0, 'y': 225}})
+    assert 'nodes' in graph, 'Missing nodes in graph'
+
+
+@pytest.mark.parametrize('resource_id, path', [
+    ('cradl:agent:abc', '/agents/cradl:agent:abc'),
+    ('cradl:agent:abc:3', '/agents/cradl:agent:abc:3'),
+    ('cradl:agent:abc:@prod', '/agents/cradl:agent:abc:@prod'),
+    ('cradl:agent:abc:$latest', '/agents/cradl:agent:abc:$latest'),
+    ('cradl:organization:cradl/cradl:agent:abc', '/agents/cradl:organization:cradl%2Fcradl:agent:abc'),
+])
+def test_an_id_is_one_path_segment(client: Client, sent, resource_id, path):
+    client.get_agent(resource_id)
+    assert sent[0][1] == path
