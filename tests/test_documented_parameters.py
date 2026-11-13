@@ -16,7 +16,7 @@ from . import service
     }),
     ('create_document', [b'%PDF-1.4'], {'content_type': 'application/pdf'}),
     ('create_model', [service.field_config()], {'llm_version': 'sonnet-5'}),
-    ('update_model', [service.create_model_id()], {'llm_version': 'haiku-5.5'}),
+    ('update_model', [service.create_model_id()], {'llm_version': 'sonnet-5.5'}),
     ('create_action', [service.create_function_id()], {'connection_id': f'cradl:connection:{uuid4().hex}'}),
     ('update_action', [service.create_action_id()], {'connection_id': f'cradl:connection:{uuid4().hex}'}),
     ('create_action_run', [service.create_action_id(), {'a': 1}], {'no_agent_run_update': True}),

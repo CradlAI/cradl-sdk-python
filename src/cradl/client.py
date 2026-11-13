@@ -719,8 +719,8 @@ class Client:
         :param agent_id: Id of the agent the model belongs to: one of the agent's resources from the start,\
  until it's deleted
         :type agent_id: str, optional
-        :param llm_version: The language model the model predicts with: 'sonnet-4.0', 'sonnet-4.5', 'sonnet-4.6', \
-'sonnet-5', 'sonnet-5.5', 'haiku-5.5' or 'qwen3-vl'
+        :param llm_version: The language model the model predicts with: 'sonnet-4.6', 'sonnet-5', 'sonnet-5.5' or \
+'qwen3-vl'
         :type llm_version: str, optional
         :return: Model response from REST API
         :rtype: dict
@@ -854,8 +854,8 @@ or ``:$latest``
         :type name: str, optional
         :param description: Description of the model
         :type description: str, optional
-        :param llm_version: The language model the model predicts with: 'sonnet-4.0', 'sonnet-4.5', 'sonnet-4.6', \
-'sonnet-5', 'sonnet-5.5', 'haiku-5.5' or 'qwen3-vl'
+        :param llm_version: The language model the model predicts with: 'sonnet-4.6', 'sonnet-5', 'sonnet-5.5' or \
+'qwen3-vl'
         :type llm_version: str, optional
         :return: Model response from REST API
         :rtype: dict
