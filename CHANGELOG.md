@@ -4,6 +4,7 @@
 
 - Agent, model and function versions: `create_*_version` publishes one, `list_*_versions` lists them
 - Aliases: `set_*_alias` creates an alias or moves it to a version, and `get_*_alias`, `list_*_aliases` and `delete_*_alias`
+- Restores: `create_*_restore(id, source_id=...)` restores a version (`<id>:3`, `<id>:@prod` or `<id>:$latest`) into the draft of an agent, model or function, and `dry_run=True` only returns what it would change; `list_*_restores` and `get_*_restore`
 - `get_agent`, `get_model`, `get_function`, `create_agent_run` and `get_agent_graph` take qualified ids: `<id>:3`, `<id>:@prod` or `<id>:$latest`
 - `update_agent` takes `environments` and `draft_environment_id`, and `set_agent_alias` an `environment_id`; `None` clears either
 - `delete_agent(delete_resources=True)` also deletes the agent's hooks, actions, models and validations
