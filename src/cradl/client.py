@@ -992,6 +992,69 @@ or ``:$latest``
         """
         return self._make_request(requests.delete, f'/models/{_path_id(model_id)}/aliases/{_path_id(alias)}')
 
+    def create_model_restore(self, model_id: str, *, source_id: str, dry_run: bool = False) -> Dict:
+        """Restore a version of the model into its draft, calls the POST /models/{modelId}/restores endpoint.
+        The draft becomes a copy of the version.
+
+        :param model_id: Id of the model's draft, the model without a version qualifier
+        :type model_id: str
+        :param source_id: The version to restore: ``<model_id>:3``, an alias (``<model_id>:@prod``) or \
+``<model_id>:$latest``
+        :type source_id: str
+        :param dry_run: Only compute what the restore would change: nothing is written and no restore is stored, so \
+the returned restore has no ``restoreId`` or ``status``
+        :type dry_run: bool, optional
+        :return: The restore from REST API, with the version ``source_id`` resolved to as ``resolvedSourceId`` and \
+what it changed as ``changes``
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body: Dict[str, Any] = {'sourceId': source_id}
+        if dry_run:
+            body['dryRun'] = True
+        return self._make_request(requests.post, f'/models/{_path_id(model_id)}/restores', body=body)
+
+    def list_model_restores(
+        self,
+        model_id: str,
+        *,
+        max_results: Optional[int] = None,
+        next_token: Optional[str] = None,
+    ) -> Dict:
+        """List the restores of the model's draft, newest first, calls the GET /models/{modelId}/restores endpoint.
+
+        :param model_id: Id of the model
+        :type model_id: str
+        :param max_results: Maximum number of results to be returned
+        :type max_results: int, optional
+        :param next_token: A unique token for each page, use the returned token to retrieve the next page.
+        :type next_token: str, optional
+        :return: Restores response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        params = dictstrip({'maxResults': max_results, 'nextToken': next_token})
+        return self._make_request(requests.get, f'/models/{_path_id(model_id)}/restores', params=params)
+
+    def get_model_restore(self, model_id: str, restore_id: str) -> Dict:
+        """Get a restore of the model's draft, calls the GET /models/{modelId}/restores/{restoreId} endpoint.
+
+        :param model_id: Id of the model
+        :type model_id: str
+        :param restore_id: Id of the restore
+        :type restore_id: str
+        :return: Restore response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.get, f'/models/{_path_id(model_id)}/restores/{_path_id(restore_id)}')
+
     def list_functions(
         self,
         *,
@@ -1240,6 +1303,70 @@ of its own, such as a managed one, can't be given code (ValueError)
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/functions/{_path_id(function_id)}/aliases/{_path_id(alias)}')
+
+    def create_function_restore(self, function_id: str, *, source_id: str, dry_run: bool = False) -> Dict:
+        """Restore a version of the function into its draft, calls the POST /functions/{functionId}/restores endpoint.
+        The draft becomes a copy of the version.
+
+        :param function_id: Id of the function's draft, the function without a version qualifier
+        :type function_id: str
+        :param source_id: The version to restore: ``<function_id>:3``, an alias (``<function_id>:@prod``) or \
+``<function_id>:$latest``
+        :type source_id: str
+        :param dry_run: Only compute what the restore would change: nothing is written and no restore is stored, so \
+the returned restore has no ``restoreId`` or ``status``
+        :type dry_run: bool, optional
+        :return: The restore from REST API, with the version ``source_id`` resolved to as ``resolvedSourceId`` and \
+what it changed as ``changes``
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body: Dict[str, Any] = {'sourceId': source_id}
+        if dry_run:
+            body['dryRun'] = True
+        return self._make_request(requests.post, f'/functions/{_path_id(function_id)}/restores', body=body)
+
+    def list_function_restores(
+        self,
+        function_id: str,
+        *,
+        max_results: Optional[int] = None,
+        next_token: Optional[str] = None,
+    ) -> Dict:
+        """List the restores of the function's draft, newest first, calls the
+        GET /functions/{functionId}/restores endpoint.
+
+        :param function_id: Id of the function
+        :type function_id: str
+        :param max_results: Maximum number of results to be returned
+        :type max_results: int, optional
+        :param next_token: A unique token for each page, use the returned token to retrieve the next page.
+        :type next_token: str, optional
+        :return: Restores response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        params = dictstrip({'maxResults': max_results, 'nextToken': next_token})
+        return self._make_request(requests.get, f'/functions/{_path_id(function_id)}/restores', params=params)
+
+    def get_function_restore(self, function_id: str, restore_id: str) -> Dict:
+        """Get a restore of the function's draft, calls the GET /functions/{functionId}/restores/{restoreId} endpoint.
+
+        :param function_id: Id of the function
+        :type function_id: str
+        :param restore_id: Id of the restore
+        :type restore_id: str
+        :return: Restore response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.get, f'/functions/{_path_id(function_id)}/restores/{_path_id(restore_id)}')
 
     def list_organizations(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
         """List the organizations you're a member of, calls the GET /organizations endpoint.
@@ -2340,6 +2467,72 @@ keeps the alias's environment
  :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
         """
         return self._make_request(requests.delete, f'/agents/{_path_id(agent_id)}/aliases/{_path_id(alias)}')
+
+    def create_agent_restore(self, agent_id: str, *, source_id: str, dry_run: bool = False) -> Dict:
+        """Restore a version of the agent into its draft, calls the POST /agents/{agentId}/restores endpoint.
+        The draft becomes a copy of the version: its steps that aren't in the version are deleted, steps deleted since
+        the version are brought back, and every step's settings are replaced by the version's. A step's own function
+        that something outside the restore also uses isn't restored in place: the step points at the function's version
+        instead, and the restore lists the function in ``changes['sharedFunctions']``.
+
+        :param agent_id: Id of the agent's draft, the agent without a version qualifier
+        :type agent_id: str
+        :param source_id: The version to restore: ``<agent_id>:3``, an alias (``<agent_id>:@prod``) or \
+``<agent_id>:$latest``
+        :type source_id: str
+        :param dry_run: Only compute what the restore would change: nothing is written and no restore is stored, so \
+the returned restore has no ``restoreId`` or ``status``
+        :type dry_run: bool, optional
+        :return: The restore from REST API, with the version ``source_id`` resolved to as ``resolvedSourceId`` and \
+what it changed as ``changes``
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        body: Dict[str, Any] = {'sourceId': source_id}
+        if dry_run:
+            body['dryRun'] = True
+        return self._make_request(requests.post, f'/agents/{_path_id(agent_id)}/restores', body=body)
+
+    def list_agent_restores(
+        self,
+        agent_id: str,
+        *,
+        max_results: Optional[int] = None,
+        next_token: Optional[str] = None,
+    ) -> Dict:
+        """List the restores of the agent's draft, newest first, calls the GET /agents/{agentId}/restores endpoint.
+
+        :param agent_id: Id of the agent
+        :type agent_id: str
+        :param max_results: Maximum number of results to be returned
+        :type max_results: int, optional
+        :param next_token: A unique token for each page, use the returned token to retrieve the next page.
+        :type next_token: str, optional
+        :return: Restores response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        params = dictstrip({'maxResults': max_results, 'nextToken': next_token})
+        return self._make_request(requests.get, f'/agents/{_path_id(agent_id)}/restores', params=params)
+
+    def get_agent_restore(self, agent_id: str, restore_id: str) -> Dict:
+        """Get a restore of the agent's draft, calls the GET /agents/{agentId}/restores/{restoreId} endpoint.
+
+        :param agent_id: Id of the agent
+        :type agent_id: str
+        :param restore_id: Id of the restore
+        :type restore_id: str
+        :return: Restore response from REST API
+        :rtype: dict
+
+        :raises: :py:class:`~cradl.InvalidCredentialsException`, :py:class:`~cradl.TooManyRequestsException`,\
+ :py:class:`~cradl.LimitExceededException`, :py:class:`requests.exception.RequestException`
+        """
+        return self._make_request(requests.get, f'/agents/{_path_id(agent_id)}/restores/{_path_id(restore_id)}')
 
     def list_agents(self, *, max_results: Optional[int] = None, next_token: Optional[str] = None) -> Dict:
         """List agents available, calls the GET /agents endpoint.
