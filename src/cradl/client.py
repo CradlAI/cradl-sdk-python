@@ -2470,8 +2470,9 @@ keeps the alias's environment
 
     def create_agent_restore(self, agent_id: str, *, source_id: str, dry_run: bool = False) -> Dict:
         """Restore a version of the agent into its draft, calls the POST /agents/{agentId}/restores endpoint.
-        The draft becomes a copy of the version: its steps that aren't in the version are deleted, steps deleted since
-        the version are brought back, and every step's settings are replaced by the version's. A step's own function
+        The draft becomes a copy of the version: its steps that aren't in the version are deleted (or, if the agent
+        doesn't own them, only taken out of it: ``changes['removed']``), steps deleted since the version are brought
+        back, and every step's settings are replaced by the version's. A step's own function
         that something outside the restore also uses isn't restored in place: the step points at the function's version
         instead, and the restore lists the function in ``changes['sharedFunctions']``.
 
